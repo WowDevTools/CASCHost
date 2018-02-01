@@ -21,7 +21,7 @@ namespace CASCHost
 		public string Version { get; private set; }
 		public HashSet<string> ToPurge { get; private set; }
 		public IReadOnlyCollection<CacheEntry> Entries => RootFiles.Values;
-		public uint MaxId => RootFiles.Values.Max(x => x.FileDataId);
+		public uint MaxId => RootFiles.Values.Count == 0 ? 0 : RootFiles.Values.Max(x => x.FileDataId);
 
 		public bool HasFiles => RootFiles.Count > 0;
 		public bool HasId(uint fileid) => RootFiles.Any(x => x.Value.FileDataId == fileid);
@@ -148,7 +148,7 @@ namespace CASCHost
 						MD5 = new MD5Hash(reader.GetFieldValue<string>(4).ToByteArray()),
 						BLTE = new MD5Hash(reader.GetFieldValue<string>(5).ToByteArray())
 					};
-					
+
 					//Keep files that still exist or are special and not flagged to be deleted
 					bool keep = File.Exists(Path.Combine(env.WebRootPath, "Data", entry.Path)) && reader.IsDBNull(6);
 					if (keep || entry.FileDataId == 0)

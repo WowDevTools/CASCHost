@@ -127,7 +127,7 @@ namespace CASCHost
 			RebuildInProgress = true;
 			timer.Change(Timeout.Infinite, Timeout.Infinite);
 
-			Startup.Logger.LogWarning($"CASC rebuild started. {changes.Count} files to be amended.");
+			Startup.Logger.LogWarning($"CASC rebuild started [{DateTime.Now}] - {changes.Count} files to be amended.");
 			Stopwatch sw = new Stopwatch();
 			sw.Start();
 
@@ -182,7 +182,7 @@ namespace CASCHost
 			Startup.Settings.Save(_env);
 
 			sw.Stop();
-			Startup.Logger.LogWarning($"CASC rebuild finish - {Math.Round(sw.Elapsed.TotalSeconds, 3)}s");
+			Startup.Logger.LogWarning($"CASC rebuild finished [{DateTime.Now}] - {Math.Round(sw.Elapsed.TotalSeconds, 3)}s");
 
 			RebuildInProgress = false;
 		}

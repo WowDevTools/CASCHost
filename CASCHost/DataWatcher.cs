@@ -27,6 +27,8 @@ namespace CASCHost
 		private readonly string outputPath;
 		private ConcurrentDictionary<string, FileSystemEventArgs> changes;
 		private CASCSettings settings;
+		private DateTime lastBuild;
+
 
 		public DataWatcher(IHostingEnvironment env)
 		{
@@ -34,6 +36,7 @@ namespace CASCHost
 			dataPath = Path.Combine(env.WebRootPath, "Data");
 			outputPath = Path.Combine(env.WebRootPath, "Output");
 			changes = new ConcurrentDictionary<string, FileSystemEventArgs>();
+			lastBuild = new DateTime();
 
 			LoadSettings();
 
@@ -109,8 +112,11 @@ namespace CASCHost
 			var files = Directory.EnumerateFiles(dataPath, "*.*", SearchOption.AllDirectories);
 			foreach (var f in files)
 			{
-				var args = new FileSystemEventArgs(WatcherChangeTypes.Changed, Path.GetDirectoryName(f), Path.GetFileName(f));
-				changes.AddOrUpdate(f, args, (k, v) => args);
+				if(File.GetLastWriteTime(f) >= lastBuild || File.GetCreationTime(f) >= lastBuild)
+				{
+					var args = new FileSystemEventArgs(WatcherChangeTypes.Changed, Path.GetDirectoryName(f), Path.GetFileName(f));
+					changes.AddOrUpdate(f, args, (k, v) => args);
+				}
 			}
 
 			timer = new Timer(UpdateCASCDirectory, null, 0, Timeout.Infinite);
@@ -128,15 +134,19 @@ namespace CASCHost
 			timer.Change(Timeout.Infinite, Timeout.Infinite);
 
 			Startup.Logger.LogWarning($"CASC rebuild started [{DateTime.Now}] - {changes.Count} files to be amended.");
-			Stopwatch sw = new Stopwatch();
-			sw.Start();
+			Stopwatch sw = Stopwatch.StartNew();
 
 			//Open the CASC Container
 			CASCContainer.Open(settings);
 			CASCContainer.OpenCdnIndices(false);
 			CASCContainer.OpenEncoding();
 			CASCContainer.OpenRoot(settings.Locale, Startup.Settings.MinimumFileDataId);
-			//CASCContainer.OpenInstall();
+
+			if(Startup.Settings.BNetAppSupport) // these are only needed by the bnet app launcher
+			{
+				CASCContainer.OpenDownload();
+				CASCContainer.OpenInstall();
+			}
 
 			//Remove Purged files
 			foreach (var purge in Startup.Cache.ToPurge)
@@ -184,6 +194,8 @@ namespace CASCHost
 			sw.Stop();
 			Startup.Logger.LogWarning($"CASC rebuild finished [{DateTime.Now}] - {Math.Round(sw.Elapsed.TotalSeconds, 3)}s");
 
+
+			lastBuild = DateTime.Now;
 			RebuildInProgress = false;
 		}
 

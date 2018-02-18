@@ -12,10 +12,8 @@ namespace CASCHost
 {
 	public class AppSettings
 	{
-		//public bool RebuildOnLoad { get; set; } = false; // force rebuild each start
-		//public bool RebuildOnChange { get; set; } = false; // rebuild on change detection
-
 		public uint MinimumFileDataId { get; set; } // the minimum file id for new files
+		public bool BNetAppSupport { get; set; } = false; // create install and download files?
 
 		public string HostDomain { get; set; } // accessible address of this server
 		public string[] CDNs { get; set; } // custom CDNs i.e. local client CASC archive clone

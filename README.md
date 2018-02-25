@@ -50,6 +50,7 @@ You'll also need to provide a patched WoW executable - see step 5 of Usage. The 
 The patched executable doesn't have to be put into an existing WoW installation as the client will download required files as and when it is needed. If it is put into an existing installation the *.build.info* will need to be deleted otherwise the client may not check for updates.
 
 #### Notes: ####
+* For MySQL 5.6 you'll need to enable the innodb_large_prefix flag
 * On the first build the system downloads the files it needs from Blizzard's CDN so may take a few minutes to complete. If this fails, as Blizzard does delete old client versions, you must use CASCExtractor to extract the required files
 * The wwwroot/Output folder's files should only ever be removed if something has gone wrong with a build. CASCHost self regulates and removes files when it is safe to do so.
 * To force a rebuild you can navigate to the following url ( 'port' being the port CASCHost is running on )

@@ -353,13 +353,11 @@ namespace CASCEdit
 			//Build Info - redundant
 			BuildInfo["Build Key"] = buildconfig;
 			BuildInfo["CDN Key"] = cdnconfig;
-			if (!BuildInfo["CDN Hosts"].StartsWith(Settings.Host))
-				BuildInfo["CDN Hosts"] = string.Join(" ", Settings.CDNs);
+			BuildInfo["CDN Hosts"] = string.Join(" ", Settings.CDNs);
 			BuildInfo.Write();
 
 			//CDNs file
-			if (!CDNs["Hosts"].StartsWith(Settings.Host))
-				CDNs["Hosts"] = string.Join(" ", Settings.CDNs);
+			CDNs["Hosts"] = string.Join(" ", Settings.CDNs);
 			CDNs.Write();
 
 			//Versions file
@@ -430,7 +428,8 @@ namespace CASCEdit
             OpenLocalIndices();
 
             //.build.info
-            File.Copy(Path.Combine(BasePath, ".build.info"), Path.Combine(savepath, ".build.info"), true);
+			if(File.Exists(Path.Combine(BasePath, ".build.info")))
+				File.Copy(Path.Combine(BasePath, ".build.info"), Path.Combine(savepath, ".build.info"), true);         
 
             //Build Config
             string buildKey = BuildInfo["Build Key"];

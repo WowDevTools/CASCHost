@@ -1,3 +1,4 @@
+
 # CASCHost
 
 CASCHost is a specially designed web service that both builds and hosts modified CASC archives. This web service is designed to replicate Blizzard's own CDN meaning a client works as seamlessly with custom content as with retail.
@@ -11,14 +12,11 @@ Requirements:
 #### Settings: ####
 Before using CASCHost the settings found in appsettings.json will need to be adjusted:
 
-* RebuildOnLoad:
-	* Enables rebuilding each time the service is launched
-* RebuildOnChange: 
-	* Enables rebuilding when changes are detected in the *wwwroot\Data folder*
-	* Rebuilds happen 30 seconds after the last change is made to avoid file permission issues and misfiring
 * MinimumFileDataId:
 	* This is the smallest FileDataId for new files; this acts as a buffer between official Blizzard files and custom ones
 	* Set this relatively high if planning to upgrade the client in the future as to avoid overwriting future Blizzard FileDataIds
+* BNetAppSupport:
+	* This enabled the creation of the Install and Download files which are only required if you're deploying via the BNet App
 * HostDomain: 
 	* This is the public address of this web service
 	* This must be "localhost" or a domain, it can not be an IP address but can have a port
@@ -40,16 +38,16 @@ Before using CASCHost the settings found in appsettings.json will need to be adj
 2. Put your custom files inside the *wwwroot\Data* folder matching the Blizzard folder structure. If you are already using the patched WoW executable you'll have the correct structure already i.e.
     * **wwwroot\Data\Interface\GLUES\MODELS\UI_MainMenu_Legion\UI_MainMenu_Legion.M2**
 3. The web service will then generate all the new client files and put them in the *wwwroot\Output* folder
-4. All new files will have their information inserted into a a MySQL table named *root_entries* including their FileDataId
-5. A patched executable will be produced in the *wwwroot\Output* folder which is required for the updated build to work. See below for distribution/first use
+4. All new files will have their information inserted into a a MySQL table named *root_entries* including their FileDataId - this is the ID referenced by the game files
+5. You will need to patch your exe to point the Versions and CDNs URLs to your CASCHost server. This can be done in Notepad, just ensure that the URLs are the same length as Blizzard's
 
 
 #### Public Hosting/Distribution: ####
-To publicly host CASCHost you will need to open the port that this service is running on; by default this is port 80. To change the port you need to edit the *hosting.json* file and before starting CASCHost.
+To publicly host CASCHost you will need to open the port that this service is running on; by default this is port 5100. To change the port you need to edit the *hosting.json* file and before starting CASCHost.
 
-You'll also need to provide a patched WoW executable. This is generated when CASCHost builds the CASC directory and can be found in the Output folder. Before distributing the Trinity connection patcher also needs to be applied.
+You'll also need to provide a patched WoW executable - see step 5 of Usage. The Trinity connection patcher also needs to be applied as usual.
 
-The patched executable doesn't have to be put into an existing WoW installation as the client will download required files as and when it is needed. If it is put into an existing installation the *.build.info* will need to be deleted otherwise the client may not update and download the new files.
+The patched executable doesn't have to be put into an existing WoW installation as the client will download required files as and when it is needed. If it is put into an existing installation the *.build.info* will need to be deleted otherwise the client may not check for updates.
 
 #### Notes: ####
 * On the first build the system downloads the files it needs from Blizzard's CDN so may take a few minutes to complete. If this fails, as Blizzard does delete old client versions, you must use CASCExtractor to extract the required files

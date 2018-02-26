@@ -35,7 +35,7 @@ namespace CASCEdit.IO
 			{
 				br.BaseStream.Position = (long)index.Offset;
 
-				var hash = br.ReadBytes(16);
+				byte[] hash = br.ReadBytes(16);
 				uint size = br.ReadUInt32();
 				byte[] unknown = br.ReadBytes(0xA);
 				byte[] data = br.ReadBytes((int)index.Size - 30);
@@ -80,14 +80,8 @@ namespace CASCEdit.IO
 			else
 			{
 				foreach (var host in CASCContainer.Settings.DownloadLocations)
-				{
-					try
-					{
-						if (DoDownload(host + url, savepath))
-							return true;
-					}
-					catch { }
-				}
+					if (DoDownload(host + url, savepath))
+						return true;
 			}
 
 			return false;
@@ -185,7 +179,7 @@ namespace CASCEdit.IO
 				foreach (var entry in entries)
 				{
 					bw.Write(entry.Data);
-					entry.Data = new byte[0]; // Clean up
+					Array.Resize(ref entry.Data, 0);
 				}
 
 				// Compute header hash
@@ -238,7 +232,7 @@ namespace CASCEdit.IO
 		}
 		#endregion
 
-		
+
 		private static string GetDataFile(long bytes)
 		{
 			string path = Path.Combine(CASCContainer.BasePath, "Data", "data");
@@ -252,7 +246,7 @@ namespace CASCEdit.IO
 			else
 			{
 				int ext = int.Parse(Path.GetExtension(prevDataFile).TrimStart('.')) + 1;
-				return Path.Combine(path, "data." + ext.ToString("D3")); //Make new file
+				return Path.Combine(path, "data." + ext.ToString("D3")); // make a new .data file
 			}
 		}
 	}

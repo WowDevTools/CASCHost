@@ -8,7 +8,7 @@ namespace CASCEdit.Structs
 {
     public class EncodingHeader
     {
-        public byte[] Magic = new byte[] { 69, 78 }; //EN
+        public byte[] Magic = new byte[] { 69, 78 }; // EN
         public byte Version;
         public byte ChecksumSizeA;
         public byte ChecksumSizeB;

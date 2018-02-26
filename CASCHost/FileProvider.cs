@@ -45,13 +45,21 @@ namespace CASCHost
 		private bool ProcessCommands(string path)
 		{
 			IHttpContextAccessor contextAccessor = serviceProvider.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;
+			ConnectionInfo conn = contextAccessor?.HttpContext.Connection;
+			string[] parts = path.TrimStart('/').Split('/');
 
-			if (contextAccessor?.HttpContext.Connection.RemoteIpAddress is IPAddress ip && IPAddress.IsLoopback(ip))
+			if (conn != null && parts.Length > 0)
 			{
-				switch (Path.GetFileName(path).ToLower())
+				bool isLocal = conn?.LocalIpAddress.ToString() != "::1" ? conn.RemoteIpAddress.Equals(conn.LocalIpAddress) : IPAddress.IsLoopback(conn.RemoteIpAddress);
+				if (!isLocal)
+					return false;
+
+				switch (Path.GetFileName(parts[0]).ToLowerInvariant())
 				{
 					case "rebuild":
-						Startup.Watcher.ForceRebuild();
+						string pass = parts.Length > 1 ? parts[1] : "";
+						if (Startup.Settings.RebuildPassword == pass)
+							Startup.Watcher.ForceRebuild();
 						return true;
 				}
 			}
@@ -59,9 +67,10 @@ namespace CASCHost
 			return false;
 		}
 
+
 		private bool GetByteRange(out RangeItemHeaderValue range)
 		{
-			if(contextAccessor == null)
+			if (contextAccessor == null)
 				contextAccessor = serviceProvider.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;
 
 			range = contextAccessor?.HttpContext?.Request?.GetTypedHeaders()?.Range?.Ranges.FirstOrDefault();

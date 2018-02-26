@@ -45,10 +45,10 @@ namespace CASCHost
 			if (RootFiles == null)
 				Load();
 
-			//Update value
+			// Update value
 			if (RootFiles.ContainsKey(item.Path))
 			{
-				//Matching
+				// Matching
 				if (RootFiles[item.Path] == item)
 					return;
 
@@ -58,7 +58,7 @@ namespace CASCHost
 				return;
 			}
 
-			//Matching Id - Ignore root/encoding
+			// Matching Id - Ignore root/encoding
 			if (item.FileDataId > 0 && RootFiles.Values.Any(x => x.FileDataId == item.FileDataId))
 			{
 				var existing = RootFiles.Where(x => x.Value.FileDataId == item.FileDataId).ToArray();
@@ -69,7 +69,7 @@ namespace CASCHost
 				}
 			}
 
-			//Add
+			// Add
 			RootFiles.Add(item.Path, item);
 
 			queries.Enqueue(string.Format(REPLACE_RECORD, MySqlHelper.EscapeString(item.Path), item.FileDataId, item.Hash, item.MD5, item.BLTE));
@@ -191,7 +191,7 @@ namespace CASCHost
 			{
 				sb.Clear();
 
-				int count = Math.Min(queries.Count, 2500); //limit queries per transaction
+				int count = Math.Min(queries.Count, 2500); // limit queries per transaction
 				for (int i = 0; i < count; i++)
 					sb.AppendLine(queries.Dequeue());
 
@@ -215,25 +215,29 @@ namespace CASCHost
 
 		#region SQL Strings
 
-		private const string CREATE_DATA_TABLE = "CREATE TABLE IF NOT EXISTS `root_entries` ( " +
-												 " `Id` BIGINT NOT NULL AUTO_INCREMENT, " +
-												 " `Path` VARCHAR(1024), " +
-												 " `FileDataId` INT UNSIGNED, " +
-												 " `Hash` BIGINT UNSIGNED, " +
-												 " `MD5` VARCHAR(32), " +
-												 " `BLTE` VARCHAR(32), " +
-												 " `PurgeAt` DATE NULL, " +
-												 " PRIMARY KEY(`Id`), " +
-												 " UNIQUE INDEX `Path` (`Path`) " +
-												 ") COLLATE = 'utf8_general_ci' ENGINE=InnoDB;";
+		private const string CREATE_DATA_TABLE = "SET GLOBAL innodb_file_format=Barracuda;                        " +
+												 "SET GLOBAL innodb_file_per_table=ON;                            " +
+												 "SET GLOBAL innodb_large_prefix=ON;                              " +
+												 "                                                                " +
+												 "CREATE TABLE IF NOT EXISTS `root_entries` (                     " +
+												 " `Id` BIGINT NOT NULL AUTO_INCREMENT,                           " +
+												 " `Path` VARCHAR(1024),                                          " +
+												 " `FileDataId` INT UNSIGNED,                                     " +
+												 " `Hash` BIGINT UNSIGNED,                                        " +
+												 " `MD5` VARCHAR(32),                                             " +
+												 " `BLTE` VARCHAR(32),                                            " +
+												 " `PurgeAt` DATE NULL,                                           " +
+												 " PRIMARY KEY(`Id`),                                             " +
+												 " UNIQUE INDEX `Path` (`Path`)                                   " +
+												 ") COLLATE = 'utf8_general_ci' ENGINE=InnoDB ROW_FORMAT=DYNAMIC; ";
 
-		private const string LOAD_DATA = "SELECT * FROM `root_entries`;";
+		private const string LOAD_DATA =      "SELECT * FROM `root_entries`;";
 
 		private const string REPLACE_RECORD = "REPLACE INTO `root_entries` (`Path`,`FileDataId`,`Hash`,`MD5`,`PurgeAt`,`BLTE`) VALUES ('{0}', '{1}', '{2}', '{3}', NULL, '{4}'); ";
 
-		private const string DELETE_RECORD = "UPDATE `root_entries` SET `PurgeAt` = DATE_ADD(CAST(NOW() AS DATE), INTERVAL 1 WEEK) WHERE `Path` = '{0}'; ";
+		private const string DELETE_RECORD =  "UPDATE `root_entries` SET `PurgeAt` = DATE_ADD(CAST(NOW() AS DATE), INTERVAL 1 WEEK) WHERE `Path` = '{0}'; ";
 
-		private const string PURGE_RECORDS = "DELETE FROM `root_entries` WHERE `PurgeAt` < CAST(NOW() AS DATE); ";
+		private const string PURGE_RECORDS =  "DELETE FROM `root_entries` WHERE `PurgeAt` < CAST(NOW() AS DATE); ";
 
 		#endregion
 

@@ -21,7 +21,7 @@ namespace CASCEdit
             DecompressedSize = (uint)data.Length;
 
             using (var md5 = MD5.Create())
-                DataHash = new MD5Hash(md5.ComputeHash(data)); //Get raw hash
+                DataHash = new MD5Hash(md5.ComputeHash(data)); // get raw hash
 
             switch (encoding)
             {

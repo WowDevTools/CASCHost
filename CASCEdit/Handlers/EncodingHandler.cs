@@ -38,13 +38,16 @@ namespace CASCEdit.Handlers
                 NumEntriesA = stream.ReadUInt32BE(),
                 NumEntriesB = stream.ReadUInt32BE(),
                 _9 = stream.ReadByte(),
-                StringBlockSize = stream.ReadUInt32BE()
+                StringBlockSize = stream.ReadUInt32BE() // TODO change me to 40BE
             };
 
-            LayoutStringTable.AddRange(Encoding.ASCII.GetString(stream.ReadBytes((int)Header.StringBlockSize)).Split('\0')); //StringTable
+			// stringTableA
+			LayoutStringTable.AddRange(Encoding.ASCII.GetString(stream.ReadBytes((int)Header.StringBlockSize)).Split('\0'));
 
-            stream.ReadBytes((int)Header.NumEntriesA * 32); // header block
+			// skip header block A
+			stream.ReadBytes((int)Header.NumEntriesA * 32); 
 
+			// encoding table entry block
             for (int i = 0; i < Header.NumEntriesA; i++)
             {
                 long start = stream.BaseStream.Position;
@@ -68,9 +71,11 @@ namespace CASCEdit.Handlers
                     stream.BaseStream.Position += CHUNK_SIZE - ((stream.BaseStream.Position - start) % CHUNK_SIZE);
             }
 
-            stream.ReadBytes((int)Header.NumEntriesB * 32); //Header block
+			// skip header block B
+			stream.ReadBytes((int)Header.NumEntriesB * 32); 
 
-            for (int i = 0; i < Header.NumEntriesB; i++)
+			// layout table entry block
+			for (int i = 0; i < Header.NumEntriesB; i++)
             {
                 long start = stream.BaseStream.Position;
 
@@ -105,26 +110,25 @@ namespace CASCEdit.Handlers
             if (blte == null)
                 return;
 
-            //Entry
+            // create the entry
             var entry = new EncodingEntry()
             {
                 DecompressedSize = blte.DecompressedSize,
-                Hash = blte.DataHash
+                Hash = blte.DataHash,
             };
             entry.Keys.Add(blte.Hash);
 
-            if (Data.ContainsKey(blte.DataHash))
+            if (Data.ContainsKey(blte.DataHash)) // check if it exists
             {
                 var existing = Data[blte.DataHash];
-
-                if (Layout.ContainsKey(existing.Keys[0])) //Remove old layout
+                if (Layout.ContainsKey(existing.Keys[0])) // remove old layout
                     Layout.Remove(existing.Keys[0]);
 
-                existing.Keys[0] = blte.Hash; //Existing entry
+                existing.Keys[0] = blte.Hash; // update existing entry
             }                
             else
             {
-                Data.Add(entry.Hash, entry); //New entry
+                Data.Add(entry.Hash, entry); // new entry
             }
 
             AddLayoutEntry(blte);
@@ -135,28 +139,28 @@ namespace CASCEdit.Handlers
             if (Layout.ContainsKey(blte.Hash))
                 Layout.Remove(blte.Hash);
 
-            //Get layout string
+            // get layout string
             string layoutString;
             uint size = blte.CompressedSize - 30;
 
-            if (blte.DataHash == CASCContainer.BuildConfig.GetKey("root")) //Root
+            if (blte.DataHash == CASCContainer.BuildConfig.GetKey("root")) // root is always z
                 layoutString = "z";
-            else if (size >= 1024 * 256) //256K* seems to be max
+            else if (size >= 1024 * 256) // 256K* seems to be the max
                 layoutString = "b:{256K*=z}";
             else if (size > 1024)
-                layoutString = "b:{" + (int)Math.Floor(size / 1024d) + "K*=z}"; //Closest K
+                layoutString = "b:{" + (int)Math.Floor(size / 1024d) + "K*=z}"; // closest floored KB
             else
-                layoutString = "b:{" + size + "*=z}"; //Bytes
+                layoutString = "b:{" + size + "*=z}"; // actual B size
 
-            //String index
+            // string index
             int stridx = LayoutStringTable.IndexOf(layoutString);
             if (stridx == -1)
             {
-                stridx = LayoutStringTable.Count - 2;
+                stridx = LayoutStringTable.Count - 2; // ignore the 0 byte
                 LayoutStringTable.Insert(stridx, layoutString);
             }
 
-            //Entry
+            // create the entry
             var entry = new EncodingLayout()
             {
                 Size = size,
@@ -169,12 +173,12 @@ namespace CASCEdit.Handlers
 
         public CASCResult Write()
         {
-            byte[][] Entries = new byte[EncodingMap.Length][];
-            CASCFile[] Files = new CASCFile[EncodingMap.Length];
+            byte[][] entries = new byte[EncodingMap.Length][];
+            CASCFile[] files = new CASCFile[EncodingMap.Length];
 
             //StringTable A 1
-            Entries[1] = Encoding.UTF8.GetBytes(string.Join("\0", LayoutStringTable));
-            Files[1] = new CASCFile(Entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
+            entries[1] = Encoding.UTF8.GetBytes(string.Join("\0", LayoutStringTable));
+            files[1] = new CASCFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
 
             //Data Blocks 3
             using (MemoryStream ms = new MemoryStream())
@@ -185,8 +189,8 @@ namespace CASCEdit.Handlers
                 {
                     if (pos + entry.EntrySize > CHUNK_SIZE)
                     {
-                        bw.Write(new byte[CHUNK_SIZE - pos]);
-                        pos = 0;
+                        bw.Write(new byte[CHUNK_SIZE - pos]); // pad to chunk size
+						pos = 0;
                     }
 
                     bw.Write((ushort)entry.Keys.Count);
@@ -198,10 +202,10 @@ namespace CASCEdit.Handlers
                     pos += entry.EntrySize;
                 }
 
-                bw.Write(new byte[CHUNK_SIZE - pos]);
+                bw.Write(new byte[CHUNK_SIZE - pos]); // final padding
 
-                Entries[3] = ms.ToArray();
-                Files[3] = new CASCFile(Entries[3], EncodingMap[3].Type, EncodingMap[3].CompressionLevel);
+				entries[3] = ms.ToArray();
+                files[3] = new CASCFile(entries[3], EncodingMap[3].Type, EncodingMap[3].CompressionLevel);
             }
 
             //Layout Blocks 5
@@ -213,7 +217,7 @@ namespace CASCEdit.Handlers
                 {
                     if (pos + entry.EntrySize > CHUNK_SIZE)
                     {
-                        bw.Write(new byte[CHUNK_SIZE - pos]); //Pad to chunk size
+                        bw.Write(new byte[CHUNK_SIZE - pos]); // pad to chunk size
                         pos = 0;
                     }
 
@@ -224,15 +228,15 @@ namespace CASCEdit.Handlers
                     pos += entry.EntrySize;
                 }
 
-                //EOF flag
-                bw.Write(new byte[16]);
-                bw.Write(0xFFFFFFFF);
+                // EOF flag
+                bw.Write(new byte[16]); // empty hash
+                bw.Write(0xFFFFFFFF); // flag
                 pos += 16 + 4;
 
-                bw.Write(new byte[CHUNK_SIZE - pos]); //Final padding
+                bw.Write(new byte[CHUNK_SIZE - pos]); // final padding
 
-                Entries[5] = ms.ToArray();
-                Files[5] = new CASCFile(Entries[5], EncodingMap[5].Type, EncodingMap[5].CompressionLevel);
+                entries[5] = ms.ToArray();
+                files[5] = new CASCFile(entries[5], EncodingMap[5].Type, EncodingMap[5].CompressionLevel);
             }
 
             //Data Header 2
@@ -240,19 +244,19 @@ namespace CASCEdit.Handlers
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
-                int chunks = Entries[3].Length / CHUNK_SIZE;
+                int chunks = entries[3].Length / CHUNK_SIZE;
 
                 for (int i = 0; i < chunks; i++)
                 {
                     byte[] chunk = new byte[CHUNK_SIZE];
-                    Buffer.BlockCopy(Entries[3], (i * CHUNK_SIZE), chunk, 0, CHUNK_SIZE);
+                    Buffer.BlockCopy(entries[3], (i * CHUNK_SIZE), chunk, 0, CHUNK_SIZE);
 
-                    bw.Write(chunk, 6, 16); //First entry hash
-                    bw.Write(md5.ComputeHash(chunk));
+                    bw.Write(chunk, 6, 16); // first entry hash
+                    bw.Write(md5.ComputeHash(chunk)); // md5 of chunk
                 }
 
-                Entries[2] = ms.ToArray();
-                Files[2] = new CASCFile(Entries[2], EncodingMap[2].Type, EncodingMap[2].CompressionLevel);
+                entries[2] = ms.ToArray();
+                files[2] = new CASCFile(entries[2], EncodingMap[2].Type, EncodingMap[2].CompressionLevel);
             }
 
             //Layout Header 4
@@ -260,19 +264,19 @@ namespace CASCEdit.Handlers
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
-                int chunks = Entries[5].Length / CHUNK_SIZE;
+                int chunks = entries[5].Length / CHUNK_SIZE;
 
                 for (int i = 0; i < chunks; i++)
                 {
                     byte[] chunk = new byte[CHUNK_SIZE];
-                    Buffer.BlockCopy(Entries[5], (i * CHUNK_SIZE), chunk, 0, CHUNK_SIZE);
+                    Buffer.BlockCopy(entries[5], (i * CHUNK_SIZE), chunk, 0, CHUNK_SIZE);
 
-                    bw.Write(chunk, 0, 16); //First entry hash
-                    bw.Write(md5.ComputeHash(chunk));
+                    bw.Write(chunk, 0, 16); // first entry hash
+                    bw.Write(md5.ComputeHash(chunk)); // md5 of chunk
                 }
 
-                Entries[4] = ms.ToArray();
-                Files[4] = new CASCFile(Entries[4], EncodingMap[4].Type, EncodingMap[4].CompressionLevel);
+                entries[4] = ms.ToArray();
+                files[4] = new CASCFile(entries[4], EncodingMap[4].Type, EncodingMap[4].CompressionLevel);
             }
 
             //Header 0
@@ -285,23 +289,23 @@ namespace CASCEdit.Handlers
                 bw.Write(Header.ChecksumSizeB);
                 bw.Write(Header.FlagsA);
                 bw.Write(Header.FlagsB);
-                bw.WriteUInt32BE((uint)Entries[2].Length / 32);
-                bw.WriteUInt32BE((uint)Entries[4].Length / 32);
+                bw.WriteUInt32BE((uint)entries[2].Length / 32);
+                bw.WriteUInt32BE((uint)entries[4].Length / 32);
                 bw.Write(Header._9);
-                bw.WriteUInt32BE((uint)Encoding.UTF8.GetByteCount(string.Join("\0", LayoutStringTable)));
+                bw.WriteUInt32BE((uint)Encoding.UTF8.GetByteCount(string.Join("\0", LayoutStringTable))); // TODO change me to 40BE
 
-                Entries[0] = ms.ToArray();
-                Files[0] = new CASCFile(Entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
+                entries[0] = ms.ToArray();
+                files[0] = new CASCFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
             }
 
             //StringTableB 6
-            Entries[6] = GetStringTable(Entries.Select(x => x.Length));
-            Files[6] = new CASCFile(Entries[6], EncodingMap[6].Type, EncodingMap[6].CompressionLevel);
+            entries[6] = GetStringTable(entries.Select(x => x.Length));
+            files[6] = new CASCFile(entries[6], EncodingMap[6].Type, EncodingMap[6].CompressionLevel);
 
             //Write
-            CASCResult res = DataHandler.Write(WriteMode.CDN, Files);
+            CASCResult res = DataHandler.Write(WriteMode.CDN, files);
             using (var md5 = MD5.Create())
-                res.DataHash = new MD5Hash(md5.ComputeHash(Entries.SelectMany(x => x).ToArray()));
+                res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
 
             CASCContainer.Logger.LogInformation($"Encoding: Hash: {res.Hash} Data: {res.DataHash}");
 
@@ -310,12 +314,12 @@ namespace CASCEdit.Handlers
             CASCContainer.BuildConfig.Set("encoding", res.DataHash.ToString());
             CASCContainer.BuildConfig.Set("encoding", res.Hash.ToString(), 1);
 
-            Entries = new byte[0][];
-            Files = new CASCFile[0];
-			Entries = null;
-			Files = null;
+			Array.Resize(ref entries, 0);
+			Array.Resize(ref files, 0);
+			entries = null;
+			files = null;
 
-            //Cache Encoding Hash
+            // cache Encoding Hash
             CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { MD5 = res.DataHash, BLTE = res.Hash, Path = "__ENCODING__" });
 
             return res;

@@ -52,7 +52,7 @@ namespace CASCEdit.Configs
         public MD5Hash GetKey(string key)
         {
             key = key.ToLowerInvariant();
-            int index = (key == "encoding" ? 1 : 0);
+            int index = (key == "encoding" ? 1 : 0); // encoding key is the second index
 
             if (Data.ContainsKey(key))
                 return new MD5Hash(this[key][index].ToByteArray());
@@ -75,7 +75,7 @@ namespace CASCEdit.Configs
                     if (data.Key.StartsWith("_BLANK_"))
                         writer.Write(string.Join(" ", data.Value));
                     else
-                        writer.Write($"{data.Key} = {string.Join(" ", data.Value)}"); //Write key value pair
+                        writer.Write($"{data.Key} = {string.Join(" ", data.Value)}"); // write key value pair
 
                     if (i != Data.Count - 1)
                         writer.WriteLine();
@@ -87,9 +87,9 @@ namespace CASCEdit.Configs
                 string hash = md5.ComputeHash(stream.ToArray()).ToMD5String();
                 var path = Path.Combine(CASCContainer.Settings.OutputPath, hash);
 
-                File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(BasePath))); //Remove old
+                File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(BasePath))); // remove old
 
-                using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)) //Save new
+                using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)) // save new
                 {
                     stream.Position = 0;
                     stream.CopyTo(fs);

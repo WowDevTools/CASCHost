@@ -41,12 +41,12 @@ namespace CASCEdit.Handlers
 					LocaleFlags = (LocaleFlags)stream.ReadUInt32(),
 				};
 
-				//Set the global root
+				// set the global root
 				if (chunk.LocaleFlags == LocaleFlags.All_WoW && chunk.ContentFlags == ContentFlags.None)
 					GlobalRoot = chunk;
 
 				uint fileDataIndex = 0;
-				for (var i = 0; i < chunk.Count; i++)
+				for (int i = 0; i < chunk.Count; i++)
 				{
 					uint offset = stream.ReadUInt32();
 
@@ -76,10 +76,10 @@ namespace CASCEdit.Handlers
 				return;
 			}
 
-			// set maxid
+			// set maxid from cache
 			maxId = Math.Max(Math.Max(maxId, minimumid), CASCContainer.Settings.Cache?.MaxId ?? 0);
 
-			//Store encoding map
+			// store encoding map
 			encodingMap = (data as BLTEStream)?.EncodingMap.FirstOrDefault() ?? new EncodingMap(EncodingType.ZLib, 9);
 
 			stream?.Dispose();
@@ -91,7 +91,7 @@ namespace CASCEdit.Handlers
 			if (CASCContainer.Settings?.Cache == null)
 				return;
 
-			var entries = GlobalRoot.Entries.Where(x => x.FileDataId >= minimumId).ToList();
+			var entries = GlobalRoot.Entries.Where(x => x.FileDataId >= minimumId).ToList(); // avoid collection change errors
 			foreach (var e in entries)
 			{
 				if (!CASCContainer.Settings.Cache.HasId(e.FileDataId))
@@ -108,9 +108,10 @@ namespace CASCEdit.Handlers
 			ulong hash = new Jenkins96().ComputeHash(path);
 			bool found = false;
 
+			// check to see if we're overwriting an existing entry
 			foreach (var root in Chunks)
 			{
-				if (!root.LocaleFlags.HasFlag(locale) && root != GlobalRoot) // ignore incorrect locale and not global
+				if (!root.LocaleFlags.HasFlag(locale) && root != GlobalRoot) // skip incorrect locales and non-global roots
 					continue;
 
 				var index = root.Entries.FindIndex(x => x.Hash == hash);
@@ -125,17 +126,18 @@ namespace CASCEdit.Handlers
 						FileDataIdOffset = root.Entries[index].FileDataIdOffset
 					};
 
-					root.Entries[index] = entry; //Update
+					root.Entries[index] = entry; // update
 					found = true;
 
 					// max id check just to be safe
 					if (root == GlobalRoot)
-						maxId = Math.Max(entry.FileDataId, maxId); // Update max id				
+						maxId = Math.Max(entry.FileDataId, maxId); // update max id				
 
 					CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
 				}
 			}
 
+			// must be a new file, add it to the global root
 			if (!found)
 			{
 				RootEntry entry = new RootEntry()
@@ -145,20 +147,12 @@ namespace CASCEdit.Handlers
 					Hash = hash,
 					Path = path
 				};
-				
-				var cache = CASCContainer.Settings.Cache.Entries.FirstOrDefault(x => x.Path == path);
-				if (cache?.Path != path) // Get cache id
-					entry.FileDataId = Math.Max(maxId + 1, minimumId); // Check existing or calculate new Id 
 
-				var index = GlobalRoot.Entries.FindIndex(x => x.FileDataId == entry.FileDataId);
-				if (index >= 0)
-				{
-					GlobalRoot.Entries[index] = entry; // Update
-				}
-				else
-				{
-					GlobalRoot.Entries.Add(entry); // Add new
-				}
+				var cache = CASCContainer.Settings.Cache.Entries.FirstOrDefault(x => x.Path == path);
+				if (cache?.Path != path) // get cache id
+					entry.FileDataId = Math.Max(maxId + 1, minimumId); // calculate the Id 
+
+				GlobalRoot.Entries.Add(entry); // add new
 
 				maxId = Math.Max(entry.FileDataId, maxId); // Update max id
 				CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
@@ -190,7 +184,7 @@ namespace CASCEdit.Handlers
 			using (MemoryStream ms = new MemoryStream())
 			using (BinaryWriter bw = new BinaryWriter(ms))
 			{
-				//Write each chunk
+				// write each chunk
 				foreach (var c in Chunks)
 				{
 					bw.Write((uint)c.Entries.Count);
@@ -207,10 +201,10 @@ namespace CASCEdit.Handlers
 					}
 				}
 
-				//Create CASCFile
+				// create CASCFile
 				CASCFile entry = new CASCFile(ms.ToArray(), encodingMap.Type, encodingMap.CompressionLevel);
 
-				//Save and Update Build Config
+				// save and update Build Config
 				CASCResult res = DataHandler.Write(WriteMode.CDN, entry);
 				res.DataHash = new MD5Hash(md5.ComputeHash(ms.ToArray()));
 				res.HighPriority = true;
@@ -218,7 +212,7 @@ namespace CASCEdit.Handlers
 
 				CASCContainer.Logger.LogInformation($"Root: Hash: {res.Hash} Data: {res.DataHash}");
 
-				//Cache Root Hash
+				// cache Root Hash
 				CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { MD5 = res.DataHash, BLTE = res.Hash, Path = "__ROOT__" });
 
 				return res;
@@ -265,7 +259,6 @@ namespace CASCEdit.Handlers
 					continue;
 
 				var entries = root.Entries.Where(x => x.Hash == hash);
-
 				foreach (var entry in entries)
 				{
 					var blte = CASCContainer.EncodingHandler.Data[entry.MD5].Keys[0];
@@ -283,22 +276,14 @@ namespace CASCEdit.Handlers
 
 			foreach (var root in Chunks)
 			{
-				RootEntry entry = root.Entries.Where(x => x.Hash == hash).OrderByDescending(x => x.FileDataId).FirstOrDefault();
-				if (entry != null)
+				var entries = root.Entries.Where(x => x.Hash == hash).ToArray(); // should only ever be one but just incase
+				foreach(var entry in entries)
 				{
 					if (CASCContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
 					{
-						CASCContainer.DownloadHandler.RemoveEntry(enc.Keys[0]); // remove from download
-						CASCContainer.CDNIndexHandler.RemoveEntry(enc.Keys[0]); // remove from cdn index
+						CASCContainer.DownloadHandler?.RemoveEntry(enc.Keys[0]); // remove from download
+						CASCContainer.CDNIndexHandler?.RemoveEntry(enc.Keys[0]); // remove from cdn index
 					}
-
-					//int index = root.Entries.IndexOf(entry);
-					//if (index != root.Entries.Count - 1)
-					//{
-					//	RootEntry next = root.Entries[index + 1];
-					//	uint prevId = index != 0 ? root.Entries[index - 1].FileDataId : 0;
-					//	next.FileDataIdOffset = next.FileDataId - prevId - 1;
-					//}
 
 					root.Entries.Remove(entry);
 					CASCContainer.Settings.Cache?.Remove(path);

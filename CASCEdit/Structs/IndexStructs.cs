@@ -26,7 +26,7 @@ namespace CASCEdit.Structs
 
     public class IndexFooter
     {
-        public byte[] IndexBlockHash; //C hecksumSize
+        public byte[] IndexBlockHash; // ChecksumSize
         public byte[] TOCHash; // ChecksumSize
         public byte Version = 1;
         public byte _11 = 0;
@@ -35,7 +35,7 @@ namespace CASCEdit.Structs
         public byte Offset = 4;
         public byte Size = 4;
         public byte KeySize = 16;
-        public byte ChecksumSize = 8; // Always <= 0x10
+        public byte ChecksumSize = 8; // always <= 0x10
         public uint EntryCount = 0;
         public byte[] FooterMD5; // MD5[ChecksumSize]
     }

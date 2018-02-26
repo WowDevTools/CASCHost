@@ -26,7 +26,6 @@ namespace CASCEdit.Handlers
             Read();
         }
 
-
         public void Read()
         {
             foreach (var file in Files)
@@ -34,7 +33,7 @@ namespace CASCEdit.Handlers
                 using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var br = new BinaryReader(fs, Encoding.ASCII))
                 {
-                    //Parse header
+                    // header
                     LocalIndexHeader index = new LocalIndexHeader()
                     {
                         BaseFile = file,
@@ -54,7 +53,7 @@ namespace CASCEdit.Handlers
                         EntriesHash = br.ReadUInt32()
                     };
 
-                    //Parse entries
+                    // entries
                     br.BaseStream.Position = 0x28;
                     for (int i = 0; i < index.EntriesSize / 18; i++)
                     {
@@ -86,7 +85,7 @@ namespace CASCEdit.Handlers
             };
 
             var idx = LocalIndices.First(x => x.BucketIndex == GetBucket(entry.Key));
-            var existing = idx.Entries.FirstOrDefault(x => x.Key.SequenceEqual(entry.Key)); //Check for existing
+            var existing = idx.Entries.FirstOrDefault(x => x.Key.SequenceEqual(entry.Key)); // check for existing
 
             if (existing != null)
                 existing = entry;
@@ -111,7 +110,7 @@ namespace CASCEdit.Handlers
                 using (var bw = new BinaryWriter(ms))
                 {
                     bw.Write(index.HeaderHashSize);
-                    bw.Write((uint)0); //HeaderHash
+                    bw.Write((uint)0); // HeaderHash
                     bw.Write(index._2);
                     bw.Write(index.BucketIndex);
                     bw.Write(index._4);
@@ -122,9 +121,9 @@ namespace CASCEdit.Handlers
                     bw.Write(index.ArchiveTotalSizeMaximum);
                     bw.Write(new byte[8]);
                     bw.Write((uint)index.Entries.Count * 18);
-                    bw.Write((uint)0); //EntriesHash
+                    bw.Write((uint)0); // EntriesHash
 
-                    //Entries
+                    // entries
                     index.Entries.Sort(new HashComparer());
                     foreach (var entry in index.Entries)
                     {
@@ -133,7 +132,7 @@ namespace CASCEdit.Handlers
                         bw.Write(entry.Size);
                     }
 
-                    //Update EntriesHash
+                    // update EntriesHash
                     bw.BaseStream.Position = 0x28;
                     for (int i = 0; i < index.Entries.Count; i++)
                     {
@@ -144,7 +143,7 @@ namespace CASCEdit.Handlers
                     bw.BaseStream.Position = 0x24;
                     bw.Write(pC);
 
-                    //Update HeaderHash
+                    // update HeaderHash
                     bw.BaseStream.Position = 8;
                     byte[] headerhash = new byte[index.HeaderHashSize];
                     bw.BaseStream.Read(headerhash, 0, headerhash.Length);
@@ -153,11 +152,11 @@ namespace CASCEdit.Handlers
                     bw.BaseStream.Position = 4;
                     bw.Write(pC);
 
-                    //File length constraint
+                    // file length constraint
                     if (bw.BaseStream.Length < CHUNK_SIZE)
                         bw.BaseStream.SetLength(CHUNK_SIZE);
 
-                    //Save file to output
+                    // save file to output
                     var bucket = index.BucketIndex.ToString("X2");
                     var version = long.Parse(Path.GetFileNameWithoutExtension(index.BaseFile).Substring(2), NumberStyles.HexNumber);
                     string filename = bucket + version.ToString("X8") + ".idx";

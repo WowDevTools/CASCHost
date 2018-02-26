@@ -40,8 +40,7 @@ namespace CASCEdit.IO
                 memStream.Position = value;
             }
         }
-
-
+		
         public BLTEStream(Stream src)
         {
             stream = src;
@@ -49,8 +48,7 @@ namespace CASCEdit.IO
 
             Parse();
         }
-
-
+		
         private void Parse()
         {
             uint size = (uint)reader.BaseStream.Length;
@@ -151,7 +149,7 @@ namespace CASCEdit.IO
                     memStream.Write(data, 1, data.Length - 1);
                     break;
                 default:
-                    CASCContainer.Logger.LogCritical($"BLTE block type {(char)block.Encoding} (0x{block.Encoding.ToString("X2")})");
+                    CASCContainer.Logger.LogCritical($"Unknown BLTE block type {(char)block.Encoding} (0x{block.Encoding.ToString("X2")})");
                     return false;
             }
 
@@ -163,12 +161,12 @@ namespace CASCEdit.IO
 
         private void Decompress(BLTEEntry block, byte[] data, MemoryStream outStream)
         {
-            //ZLib compression level
-            block.CompressionLevel = (byte)(data[2] >> 6); //FLEVEL bits
+            // ZLib compression level
+            block.CompressionLevel = (byte)(data[2] >> 6); // FLEVEL bits
             if (block.CompressionLevel > 1)
                 block.CompressionLevel *= 3;
 
-            //Ignore encoding byte
+            // ignore encoding byte
             using (var ms = new MemoryStream(data, 1, data.Length - 1))
             using (var stream = new ZStreamReader(ms))
             {

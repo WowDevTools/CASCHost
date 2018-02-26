@@ -13,10 +13,10 @@ namespace CASCEdit.Structs
         public string BaseFile;
         public bool Changed = false;
 
-        public uint HeaderHashSize; // Usually 0x10
+        public uint HeaderHashSize; // usually 0x10
         public uint HeaderHash;
         public ushort _2 = 7;
-        public byte BucketIndex; // Always first byte of hex filename
+        public byte BucketIndex; // always first byte of hex filename
         public byte _4 = 0;
         public byte EntrySizeBytes = 4;
         public byte EntryOffsetBytes = 5;
@@ -24,16 +24,16 @@ namespace CASCEdit.Structs
         public byte ArchiveFileHeaderBytes = 30;
         public ulong ArchiveTotalSizeMaximum = 0x4000000000;
         public byte[] Padding = new byte[8];
-        public uint EntriesSize; // Total entry length in bytes
-        public uint EntriesHash; // Jenkins hash of all entries
+        public uint EntriesSize; // total entry length in bytes
+        public uint EntriesHash; // jenkins hash of all entries
 
         public List<LocalIndexEntry> Entries = new List<LocalIndexEntry>();
     }
 
     public class LocalIndexEntry
     {
-        public byte[] Key; // First 9 bytes of hash
-        public uint Size; // Byte length of file
+        public byte[] Key; // first 9 bytes of hash
+        public uint Size; // byte length of file
         public ulong Archive;
         public ulong Offset;
 
@@ -43,8 +43,8 @@ namespace CASCEdit.Structs
             get => Offset | (Archive << 30);
             set
             {
-                Archive = value >> 30;  // Top 10 bits = data.***
-                Offset = value & 0x3FFFFFFF; // Bottom 30 = offset
+                Archive = value >> 30;  // top 10 bits = data.***
+                Offset = value & 0x3FFFFFFF; // bottom 30 bits = offset
             }
         }
     }

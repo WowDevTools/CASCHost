@@ -32,9 +32,9 @@ namespace CASCEdit.Configs
 
 			Stream stream;
 
-            if (Uri.IsWellFormedUriString(file, UriKind.Absolute)) //URLs require streaming
+            if (Uri.IsWellFormedUriString(file, UriKind.Absolute)) // URLs require streaming
             {
-                BaseFile = Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(file)); //Set the correct Output path
+                BaseFile = Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(file)); // set the correct Output path
 				stream = DataHandler.Stream(file);
             }
 			else
@@ -67,7 +67,7 @@ namespace CASCEdit.Configs
                 {
                     if (i == 1)
                     {
-                        //Fill all locales if required
+                        // fill all locales / just the data based on the config
                         switch (Path.GetFileNameWithoutExtension(BaseFile))
                         {
                             case "versions":
@@ -109,7 +109,7 @@ namespace CASCEdit.Configs
 
             for (int i = 0; i < Lines.Count; i++)
             {
-                //Ignore comments and blank
+                // ignore comments and blank
                 if (string.IsNullOrWhiteSpace(Lines[i]) || Lines[i].StartsWith("#"))
                     continue;
 
@@ -117,13 +117,13 @@ namespace CASCEdit.Configs
 
                 if (fields.Count == 0)
                 {
-                    //Get header row
+                    // get header row
                     for (int x = 0; x < tokens.Length; x++)
                         fields.Add(tokens[x].Split('!').First());
                 }
                 else
                 {
-                    //Ignore lines not matching the indentifier key value
+                    // ignore lines not matching the indentifier key value
                     int keyidx = fields.IndexOf(key);
                     if (keyidx >= 0 && tokens[keyidx] != value)
                     {

@@ -14,6 +14,7 @@ namespace CASCHost
 	{
 		public uint MinimumFileDataId { get; set; } // the minimum file id for new files
 		public bool BNetAppSupport { get; set; } = false; // create install and download files?
+		public string RebuildPassword { get; set; } = "";
 
 		public string HostDomain { get; set; } // accessible address of this server
 		public string[] CDNs { get; set; } // custom CDNs i.e. local client CASC archive clone

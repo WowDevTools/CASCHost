@@ -9,7 +9,7 @@ namespace CASCEdit.Structs
 {
     public class DownloadHeader
     {
-        public byte[] Header = new byte[] { 68, 76 };
+        public byte[] Header = new byte[] { 68, 76 }; // DL
         public byte Version = 1;
         public byte ChecksumSize = 16;
         public byte Unknown = 1;
@@ -19,7 +19,7 @@ namespace CASCEdit.Structs
 
     public class DownloadEntry
     {
-		public byte Unknown;
+		public byte Unknown; // v2 only
         public MD5Hash Hash;
         public ulong FileSize;
         public byte Stage;

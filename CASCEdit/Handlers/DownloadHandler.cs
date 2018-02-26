@@ -18,7 +18,7 @@ namespace CASCEdit.Handlers
 		private List<DownloadEntry> Entries = new List<DownloadEntry>();
 		private List<DownloadTag> Tags = new List<DownloadTag>();
 
-		private int[] lastIndex;
+		private int[] endofStageIndex;
 		private EncodingMap[] EncodingMap;
 
 		public DownloadHandler(BLTEStream blte)
@@ -35,7 +35,7 @@ namespace CASCEdit.Handlers
 					NumTags = br.ReadUInt16BE(),
 				};
 
-				//Entries
+				// entries
 				for (int i = 0; i < Header.NumEntries; i++)
 				{
 					var entry = new DownloadEntry()
@@ -50,7 +50,7 @@ namespace CASCEdit.Handlers
 					Entries.Add(entry);
 				}
 
-				//Tags
+				// tags
 				int numMaskBytes = ~~((int)Header.NumEntries + 7) / 8;
 				for (int i = 0; i < Header.NumTags; i++)
 				{
@@ -66,7 +66,7 @@ namespace CASCEdit.Handlers
 
 				EncodingMap = blte.EncodingMap.ToArray();
 
-				lastIndex = new int[]
+				endofStageIndex = new int[] // store last indice of each stage
 				{
 					Entries.FindLastIndex(x => x.Stage == 0),
 					Entries.FindLastIndex(x => x.Stage == 1)
@@ -89,11 +89,11 @@ namespace CASCEdit.Handlers
 				Stage = (byte)(blte.HighPriority ? 0 : 1)
 			};
 
-			int index = lastIndex[entry.Stage];
+			int index = endofStageIndex[entry.Stage];
 			if (index >= 0)
 			{
-				if (entry.Stage == 0) lastIndex[0]++;
-				lastIndex[1]++;
+				if (entry.Stage == 0) endofStageIndex[0]++;
+				endofStageIndex[1]++;
 
 				Entries.Insert(index, entry);
 
@@ -126,7 +126,7 @@ namespace CASCEdit.Handlers
 			byte[][] entries = new byte[EncodingMap.Length][];
 			CASCFile[] files = new CASCFile[EncodingMap.Length];
 
-			//Header
+			// header
 			using (var ms = new MemoryStream())
 			using (var bw = new BinaryWriter(ms))
 			{
@@ -141,7 +141,7 @@ namespace CASCEdit.Handlers
 				files[0] = new CASCFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
 			}
 
-			//Files
+			// files
 			using (var ms = new MemoryStream())
 			using (var bw = new BinaryWriter(ms))
 			{
@@ -157,7 +157,7 @@ namespace CASCEdit.Handlers
 				files[1] = new CASCFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
 			}
 
-			//Tags
+			// tags
 			using (var ms = new MemoryStream())
 			using (var bw = new BinaryWriter(ms))
 			{
@@ -174,7 +174,7 @@ namespace CASCEdit.Handlers
 				files[2] = new CASCFile(entries[2], EncodingMap[2].Type, EncodingMap[2].CompressionLevel);
 			}
 
-			//Write
+			// write
 			CASCResult res = DataHandler.Write(WriteMode.CDN, files);
 			using (var md5 = MD5.Create())
 				res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
@@ -187,8 +187,8 @@ namespace CASCEdit.Handlers
 			CASCContainer.BuildConfig.Set("download", res.DataHash.ToString());
 			CASCContainer.BuildConfig.Set("download", res.Hash.ToString(), 1);
 
-			entries = new byte[0][];
-			files = new CASCFile[0];
+			Array.Resize(ref entries, 0);
+			Array.Resize(ref files, 0);
 			entries = null;
 			files = null;
 			return res;

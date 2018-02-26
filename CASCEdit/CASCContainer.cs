@@ -45,7 +45,7 @@ namespace CASCEdit
 
             Settings.Cache?.Load();
 
-            //Load previous build / blizzard build
+            // load previous build / blizzard build
             if (File.Exists(Path.Combine(Settings.OutputPath, ".build.info")))
             {
                 LoadBuildInfo(Settings.OutputPath);
@@ -69,7 +69,7 @@ namespace CASCEdit
                 LoadBuildInfo(BasePath);
             }
 
-            //Load hosted configs if not basic
+            // load hosted configs if not basic
             if (!Settings.Basic)
             {
                 Versions = new SingleConfig(Settings.PatchUrl + "/versions", "Region", BuildInfo["Branch"]);
@@ -298,20 +298,20 @@ namespace CASCEdit
 			//Patch exe
 			//Patcher.Run("http://" + CASCContainer.Settings.Host);
 
-			//Entries
+			// Entries
 			var entries = SaveEntries().Result;
 
-			//CDN Archives
+			// CDN Archives
 			Settings.Logger.LogInformation("Starting CDN Index.");
 			CDNIndexHandler?.CreateArchive(entries);
 
-			//Root
+			// Root
 			Settings.Logger.LogInformation("Starting Root.");
 			foreach (var entry in entries)
 				RootHandler.AddEntry(entry.Path, entry);
 			entries.Add(RootHandler.Write()); //Add to entry list
 
-			//Download
+			// Download
 			if (DownloadHandler != null)
 			{
 				Settings.Logger.LogInformation("Starting Download.");
@@ -327,7 +327,7 @@ namespace CASCEdit
 				InstallHandler.Write(entries);
 			}
 
-			//Encoding
+			// Encoding
 			Settings.Logger.LogInformation("Starting Encoding.");
 			foreach (var entry in entries)
 				EncodingHandler.AddEntry(entry);
@@ -336,12 +336,12 @@ namespace CASCEdit
 
 			Settings.Logger.LogInformation("Starting Configs.");
 
-			//CDN Config
+			// CDN Config
 			CDNConfig.Remove("archive-group");
 			CDNConfig.Remove("patch-archives");
 			CDNConfig.Remove("patch-archive-group");
 
-			//Build Config
+			// Build Config
 			BuildConfig.Set("patch", "");
 			BuildConfig.Set("patch-size", "0");
 			BuildConfig.Set("patch-config", "");
@@ -350,31 +350,31 @@ namespace CASCEdit
 			string cdnconfig = CDNConfig.Write();
 			string version = BuildInfo["Version"];
 
-			//Build Info - redundant
+			// Build Info - redundant
 			BuildInfo["Build Key"] = buildconfig;
 			BuildInfo["CDN Key"] = cdnconfig;
 			BuildInfo["CDN Hosts"] = string.Join(" ", Settings.CDNs);
 			BuildInfo.Write();
 
-			//CDNs file
+			// CDNs file
 			CDNs["Hosts"] = string.Join(" ", Settings.CDNs);
 			CDNs.Write();
 
-			//Versions file
+			// Versions file
 			Versions["BuildConfig"] = buildconfig;
 			Versions["CDNConfig"] = cdnconfig;
 			Versions["VersionsName"] = version;
 			Versions["BuildId"] = version.Split('.').Last();
 			Versions.Write();
 
-			//Done
+			// Done!
 			Logger.LogInformation("CDN Config: " + cdnconfig);
 			Logger.LogInformation("Build Config: " + buildconfig);
 
-			//Update Cache files
+			// update Cache files
 			Settings.Cache?.Save();
 
-			//Cleanup 
+			// cleanup 
 			entries.Clear();
 			entries.TrimExcess();
 			Close();
@@ -382,20 +382,21 @@ namespace CASCEdit
 
 		private async static Task<List<CASCResult>> SaveEntries()
 		{
-			//Generate BLTE encoded files
+			// generate BLTE encoded files
 			ConcurrentBag<CASCResult> entries = new ConcurrentBag<CASCResult>();
 			Func<KeyValuePair<string, CASCFile>, bool> BuildBLTE = (file) =>
 			{
 				CASCResult res = DataHandler.Write(WriteMode.CDN, file.Value);
 				res.DataHash = file.Value.DataHash;
 				res.Path = file.Key;
-				res.HighPriority = (file.Key.ToUpper().IndexOf("INTERFACE") >= 0);
+				//res.HighPriority - unneeded really
 				entries.Add(res);
 
 				Logger.LogInformation($"{Path.GetFileName(res.Path)}: Hash: {res.Hash} Data: {res.DataHash}");
 				return true;
 			};
 
+			// batch parallel blte encoding
 			var encoder = new TransformBlock<KeyValuePair<string, CASCFile>, bool>(
 				file => BuildBLTE(file),
 				new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 500 }
@@ -427,11 +428,11 @@ namespace CASCEdit
 
             OpenLocalIndices();
 
-            //.build.info
+            // .build.info
 			if(File.Exists(Path.Combine(BasePath, ".build.info")))
 				File.Copy(Path.Combine(BasePath, ".build.info"), Path.Combine(savepath, ".build.info"), true);         
 
-            //Build Config
+            // Build Config
             string buildKey = BuildInfo["Build Key"];
             string buildCfgLocalPath = Path.Combine(BasePath, "Data", "config", buildKey.Substring(0, 2), buildKey.Substring(2, 2), buildKey);
             if (File.Exists(buildCfgLocalPath))
@@ -444,8 +445,7 @@ namespace CASCEdit
                 return false;
             }
 
-
-            //CDN Config
+            // CDN Config
             string cdnKey = BuildInfo["CDN Key"];
             string cdnCfgLocalPath = Path.Combine(BasePath, "Data", "config", cdnKey.Substring(0, 2), cdnKey.Substring(2, 2), cdnKey);
             if (File.Exists(cdnCfgLocalPath))
@@ -461,7 +461,7 @@ namespace CASCEdit
 
             string path;
 
-            //Encoding File
+            // Encoding File
             LocalIndexEntry idxInfo = LocalIndexHandler?.GetIndexInfo(BuildConfig.GetKey("encoding"));
             if (idxInfo != null)
             {
@@ -475,7 +475,7 @@ namespace CASCEdit
                 return false;
             }
 
-            //Root File
+            // Root File
             var rootkey = BuildConfig.GetKey("root");
             if (EncodingHandler.Data.TryGetValue(rootkey, out EncodingEntry enc))
             {
@@ -492,7 +492,7 @@ namespace CASCEdit
                 }
             }
 
-            //Install File
+            // Install File
             var installkey = BuildConfig.GetKey("install");
             if (EncodingHandler.Data.TryGetValue(installkey, out enc))
             {
@@ -509,7 +509,7 @@ namespace CASCEdit
                 }
             }
 
-            //Download File
+            // Download File
             var downloadkey = BuildConfig.GetKey("download");
             if (EncodingHandler.Data.TryGetValue(downloadkey, out enc))
             {
@@ -550,7 +550,7 @@ namespace CASCEdit
             EncodingHandler?.Dispose();
             RootHandler?.Dispose();
 
-            //Force GC
+            // force GC
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }

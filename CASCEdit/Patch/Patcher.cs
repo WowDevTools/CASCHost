@@ -92,7 +92,7 @@ namespace CASCEdit.Patch
 
         private static Dictionary<byte[], byte[]> BuildPatches(string content, string host)
         {
-            //Match agent = Regex.Match(content, AGENT_REGEX, RegexOptions.Compiled | RegexOptions.IgnoreCase); //Get Agent executable
+            // match agent = Regex.Match(content, AGENT_REGEX, RegexOptions.Compiled | RegexOptions.IgnoreCase); //Get Agent executable
             MatchCollection urls = Regex.Matches(content, URL_REGEX, RegexOptions.Compiled | RegexOptions.IgnoreCase); //Get versions + cdns urls
 
             Dictionary<byte[], byte[]> patches = new Dictionary<byte[], byte[]>();
@@ -100,10 +100,10 @@ namespace CASCEdit.Patch
             {
                 string newurl = host + '/' + Path.GetFileName(url.Value);
                 if (newurl.Length < url.Value.Length)
-                    newurl = (newurl + "?").PadRight(url.Value.Length, 'X'); //Pad with fake query string
+                    newurl = (newurl + "?").PadRight(url.Value.Length, 'X'); // pad with fake query string
 
                 if (newurl != url.Value)
-                    patches.Add(Encoding.UTF8.GetBytes(url.Value), Encoding.UTF8.GetBytes(newurl)); //Versions/cdns patch
+                    patches.Add(Encoding.UTF8.GetBytes(url.Value), Encoding.UTF8.GetBytes(newurl)); // versions/cdns patch
             }
 
             return patches;

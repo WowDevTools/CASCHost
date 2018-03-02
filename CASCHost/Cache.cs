@@ -102,9 +102,9 @@ namespace CASCHost
 		{
 			//Delete previous Root and Encoding
 			if (RootFiles.ContainsKey("__ROOT__"))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ROOT__"].MD5.ToString()));
+				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ROOT__"].BLTE.ToString()));
 			if (RootFiles.ContainsKey("__ENCODING__"))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ENCODING__"].MD5.ToString()));
+				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ENCODING__"].BLTE.ToString()));
 		}
 
 

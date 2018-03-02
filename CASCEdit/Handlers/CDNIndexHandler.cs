@@ -62,7 +62,8 @@ namespace CASCEdit.Handlers
 			//Archive is now empty - better remove it
 			if (archive.Entries.Count == 0)
 			{
-				File.Delete(archive.BaseFile);
+				if (File.Exists(archive.BaseFile))
+					File.Delete(archive.BaseFile);
 				CASCContainer.CDNConfig["archives"].RemoveAll(x => x == Path.GetFileNameWithoutExtension(archive.BaseFile));
 				return;
 			}

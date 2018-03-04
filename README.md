@@ -15,6 +15,8 @@ Before using CASCHost the settings found in appsettings.json will need to be adj
 * MinimumFileDataId:
 	* This is the smallest FileDataId for new files; this acts as a buffer between official Blizzard files and custom ones
 	* Set this relatively high if planning to upgrade the client in the future as to avoid overwriting future Blizzard FileDataIds
+* RebuildPassword
+	* Sets the password required for the rebuild command
 * BNetAppSupport:
 	* This enabled the creation of the Install and Download files which are only required if you're deploying via the BNet App
 * HostDomain: 
@@ -55,6 +57,7 @@ The patched executable doesn't have to be put into an existing WoW installation 
 * The wwwroot/Output folder's files should only ever be removed if something has gone wrong with a build. CASCHost self regulates and removes files when it is safe to do so.
 * To force a rebuild you can navigate to the following url ( 'port' being the port CASCHost is running on )
 	* **http://localhost:{{port}}/rebuild**
+	* **http://localhost:{{port}}/rebuild/{RebuildPassword}**
 * When a file is deleted it remains in the Output folder for a week before being removed. This is to prevent streaming errors with missing files for the currently online players.
 * This may use >2GB of ram as it stores the encoding and root files in memory when rebuilding
 * To switch client versions simply clear the SystemFiles and Output folders and put the new .build.info into the SystemFiles folder as per the initial installation. FileDataIds will be restored as they are maintained via the MySQL database table.

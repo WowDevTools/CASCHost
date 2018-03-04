@@ -54,10 +54,10 @@ namespace CASCHost
 				if (!isLocal)
 					return false;
 
-				switch (Path.GetFileName(parts[0]).ToLowerInvariant())
+				switch (Path.GetFileName(parts.First()).ToLowerInvariant())
 				{
 					case "rebuild":
-						string pass = parts.Length > 1 ? parts[1] : "";
+						string pass = parts.Length > 1 ? parts.Last() : "";
 						if (Startup.Settings.RebuildPassword == pass)
 							Startup.Watcher.ForceRebuild();
 						return true;

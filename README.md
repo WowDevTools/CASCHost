@@ -1,63 +1,91 @@
 
 # CASCHost
 
-CASCHost is a specially designed web service that both builds and hosts modified CASC archives. This web service is designed to replicate Blizzard's own CDN meaning a client works as seamlessly with custom content as with retail.
+CASCHost is a specially designed web service that both builds and hosts modified a CAS container.
+This web service is designed to replicate Blizzard's own CDN meaning a client works as seamlessly with custom content as with retail.
 
-Requirements:
+The implementation provided is designed for the 99% whom want to add, edit and remove files from a specific build and host the changes all in one simple-ish application.
+For those wanting to create CAS from scratch, have their own build pipeline or want a MPQEditor style tool, you will need to find another solution.
+
+Included is a rough [diagram](CASC_Diagram.svg) of how CAS works to attempt to explain what CASCHost does and how CAS works at a very fundamental level. Further information can be found on the [WoWDev Wiki](https://wowdev.wiki/CASC).
+
+#### Requirements: ####
 
 *  [.Net Core 2.0](https://www.microsoft.com/net/download/core)
-* A MySQL server
-* A public domain name ( if hosting a public server )
+* A MySQL server (version 5.6+)
+* A public domain name (if hosting a public server)
 
 #### Settings: ####
-Before using CASCHost the settings found in appsettings.json will need to be adjusted:
+Before using CASCHost the settings found in `appsettings.json` will need to be adjusted:
 
 * MinimumFileDataId:
-	* This is the smallest FileDataId for new files; this acts as a buffer between official Blizzard files and custom ones
-	* Set this relatively high if planning to upgrade the client in the future as to avoid overwriting future Blizzard FileDataIds
+	* This is the smallest fileDataId for new files; this acts as a buffer between official Blizzard files and custom ones to avoid collisions
+	* I'd advise setting this relatively high as to avoid colliding with future Blizzard fileDataIds in the eventuality of moving to a newer build
 * RebuildPassword
 	* Sets the password required for the rebuild command
 * BNetAppSupport:
-	* This enabled the creation of the Install and Download files which are only required if you're deploying via the BNet App
+	* This enables the creation of the Install and Download files which are only required if you're deploying your client via the B-Net App
 * HostDomain: 
 	* This is the public address of this web service
-	* This must be "localhost" or a domain, it can not be an IP address but can have a port
+	* Note: This must be "localhost" or a domain, IP addresses are NOT supported however ports ARE
 * CDNs:
-	* These are additional CDNs that contain WoW CASC files such as a custom backup of a particular patch
-	* This MUST be a domain, IPs and ports are not accepted by the client
+	* These are additional CDNs that contain WoW CASC files such as a backup of a particular build (in the case of Blizzard's taking theirs down)
+	* Note: This MUST be a domain, IP addresses and ports are not accepted by the client
 * SqlConnection:
-	* SQL connection details used for storing root file information
-	* CASCHost will generate the required SQL table automatically
+	* SQL connection details used for storing root file information, CASCHost automates table creation
 * PatchUrl:
 	* This is the live Blizzard patch URL used for downloading required files
 * Locale:
-	* This is the client locale you'll be targeting, this is important for localised DB2 files to work correctly
+	* This is the client locale you'll be targeting, this is important for localised DB files to work correctly
 * DirectoryHash:
-	* This is for internal use only and shouldn't be modified
+	* This is for internal change tracking only
 
 #### Usage: ####
-1. Put the *.build.info* file from the client you are targeting into the *wwwroot\SystemFiles* folder
-2. Put your custom files inside the *wwwroot\Data* folder matching the Blizzard folder structure. If you are already using the patched WoW executable you'll have the correct structure already i.e.
-    * **wwwroot\Data\Interface\GLUES\MODELS\UI_MainMenu_Legion\UI_MainMenu_Legion.M2**
-3. The web service will then generate all the new client files and put them in the *wwwroot\Output* folder
-4. All new files will have their information inserted into a a MySQL table named *root_entries* including their FileDataId - this is the ID referenced by the game files
-5. You will need to patch your exe to point the Versions and CDNs URLs to your CASCHost server. This can be done in Notepad, just ensure that the URLs are the same length as Blizzard's
-
+1. Put the `.build.info` file from the client you are targeting into the `wwwroot\systemfiles` folder
+2. Put your custom files inside the `wwwroot\data` folder matching the Blizzard folder structure. If you are already using the patched WoW executable you'll have the correct structure already e.g. `wwwroot\data\interface\glues\models\ui_mainmenu_legion\ui_mainmenu_legion.m2`
+3. The web service will then generate all the new client files and put them in the `wwwroot\output` folder
+4. All new files will have their information inserted into a a MySQL table named `root_entries` which includes their fileDataId - this is the Id referenced by the game files and DBs
+5. You will need to patch your exe/app to point the Versions and CDNs URLs to your CASCHost server (ask in Discord if you need information on how to do this)
+6. Whenever you change a file simply use the rebuild command (see notes), wait for it to finish and restart the client
 
 #### Public Hosting/Distribution: ####
-To publicly host CASCHost you will need to open the port that this service is running on; by default this is port 5100. To change the port you need to edit the *hosting.json* file and before starting CASCHost.
+To publicly host CASCHost you will need to open the port that this service is running on; by default this is port 5100. To change the port you need to edit the `hosting.json` file and restart CASCHost.
 
-You'll also need to provide a patched WoW executable - see step 5 of Usage. The Trinity connection patcher also needs to be applied as usual.
+You'll also need to provide a patched WoW executable - see step 5 of Usage, the Trinity connection patcher needs to be applied as usual.
 
-The patched executable doesn't have to be put into an existing WoW installation as the client will download required files as and when it is needed. If it is put into an existing installation the *.build.info* will need to be deleted otherwise the client may not check for updates.
+The patched executable doesn't have to be put into an existing WoW installation as the client will download the files it needs. If it is put into an existing installation the `.build.info` will need to be renamed/deleted to force the client to connect to your CDN opposed to Blizzard's.
 
 #### Notes: ####
-* For MySQL 5.6 you'll need to enable the innodb_large_prefix flag
-* On the first build the system downloads the files it needs from Blizzard's CDN so may take a few minutes to complete. If this fails, as Blizzard does delete old client versions, you must use CASCExtractor to extract the required files
-* The wwwroot/Output folder's files should only ever be removed if something has gone wrong with a build. CASCHost self regulates and removes files when it is safe to do so.
-* To force a rebuild you can navigate to the following url ( 'port' being the port CASCHost is running on )
-	* **http://localhost:{{port}}/rebuild**
-	* **http://localhost:{{port}}/rebuild/{RebuildPassword}**
-* When a file is deleted it remains in the Output folder for a week before being removed. This is to prevent streaming errors with missing files for the currently online players.
+* On the first build the system downloads the files it needs from Blizzard's CDN so may take a few minutes to complete. If this fails, as Blizzard does delete old client versions, you must use CASCExtractor to extract the required files.
+* The `wwwroot/output` folder's files should only ever be removed if something has gone wrong. CASCHost self regulates and removes files when it is appropiate to do so.
+* To force a rebuild you can navigate to the following url
+	* `http://localhost:CASCHOST_PORT/rebuild`
+	* `http://localhost:CASCHOST_PORT/rebuild/CASCHOST_REBUILDPASSWORD`
+* When a file is deleted it remains in the `wwwroot/output` folder for a week before being removed. This is to prevent streaming errors with missing files for the currently online players.
 * This may use >2GB of ram as it stores the encoding and root files in memory when rebuilding
-* To switch client versions simply clear the SystemFiles and Output folders and put the new .build.info into the SystemFiles folder as per the initial installation. FileDataIds will be restored as they are maintained via the MySQL database table.
+* To switch client versions simply clear the `wwwroot/systemfiles` and `wwwroot/output` folders and overwrite the `wwwroot/systemfiles` `.build.info` with the new build's one. The fileDataIds will be restored and the files regenerated the next time CASCHost is run.
+* NEVER delete the database, this is fundamental to maintaining the same fileDataIds each rebuild!
+
+#### FAQ: ####
+What versions are supported?
+- Everything WoD+ (although this has only been tested on Legion and BfA).
+
+It was working now its all broken - what do?
+- Delete the `Output` folder and restart CASCHost this will resolve 99% of all issues. Failing that, jump on Discord.
+
+I keep getting a stream error. What is this?
+- Either a file is malformed or doesn't exist (either in CASCHost or the Blizzard CDN).
+
+How can I see the fileDataIds that are generated?
+- In the database there will be a table called `root_entries` which contains everything needed for modding including the fileDataId.
+
+Isn't putting everything in the `wwwroot` folder unsecure?
+- No. There are special rooting rules that prevent access to the `Data` directory.
+
+#### Thanks: ####
+- [TOM_RUS](https://github.com/tomrus88) for his [CASCExplorer](https://github.com/WoW-Tools/CASCExplorer) implementation
+- The [WoWDev Wiki](https://wowdev.wiki/CASC) contributors
+- furl for sharing his findings with me
+- Azarchius and [Epsilon WoW](https://www.epsilonwow.net/) for their months of testing, bug fixes and feature/implementation suggestions
+- Helnesis and [Kuretar](http://kuretar-serveur.fr/) for their time testing
+- Various others for testing and taking on the development and support of this project

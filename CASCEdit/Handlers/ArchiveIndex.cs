@@ -175,7 +175,14 @@ namespace CASCEdit.Handlers
 				string filename = ComputeFilename(bw, md5, posFooterStart);
 
 				var path = Path.Combine(CASCContainer.Settings.OutputPath, filename + ".index");
-				using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+
+                if (CASCContainer.Settings.StaticMode)
+                {
+                    path = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(filename + ".index", "data"));
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                }
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
 				{
 					ms.Position = 0;
 					ms.CopyTo(fs);

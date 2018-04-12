@@ -21,8 +21,10 @@ namespace CASCEdit
         public ICASCLog Logger { get; set; } = new ConsoleLogger();
         public ICache Cache { get; set; }
 		public LocaleFlags Locale { get; set; } = LocaleFlags.enUS;
+        public bool StaticMode { get; set; } = false;
 
-		public HashSet<string> DownloadLocations { get; set; }
+
+        public HashSet<string> DownloadLocations { get; set; }
 		public HashSet<string> CDNs { get; set; }
 
 		public void Format()

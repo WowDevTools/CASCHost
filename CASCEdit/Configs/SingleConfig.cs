@@ -58,6 +58,13 @@ namespace CASCEdit.Configs
         public void Write()
         {
             var path = Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(BaseFile));
+
+            if (CASCContainer.Settings.StaticMode)
+            {
+                path = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(Path.GetFileName(BaseFile)));
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+            }
+
             using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (var writer = new StreamWriter(stream))
             {

@@ -16,6 +16,7 @@
     },
     "CASCHost": {
       "commandName": "Project",
+      "workingDirectory": "E:\\Modding\\Schattenhain\\Program\\CASCHost\\CASCHost\\bin\\Debug\\netcoreapp2.0",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

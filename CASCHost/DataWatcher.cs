@@ -265,8 +265,9 @@ namespace CASCHost
 				Logger = Startup.Logger,
 				Cache = Startup.Cache,
 				Locale = locale,
-				CDNs = new HashSet<string>()
-			};
+				CDNs = new HashSet<string>(),
+                StaticMode = Startup.Settings.StaticMode
+            };
 
 			settings.CDNs.Add(settings.Host);
 

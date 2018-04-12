@@ -16,7 +16,7 @@ namespace CASCEdit.Handlers
 	public class RootHandler : IDisposable
 	{
 		public RootChunk GlobalRoot { get; private set; }
-		public Dictionary<string, CASCFile> NewFiles { get; private set; } = new Dictionary<string, CASCFile>();
+		public SortedDictionary<string, CASCFile> NewFiles { get; private set; } = new SortedDictionary<string, CASCFile>();
 		public List<RootChunk> Chunks { get; private set; } = new List<RootChunk>();
 
 		private LocaleFlags locale;

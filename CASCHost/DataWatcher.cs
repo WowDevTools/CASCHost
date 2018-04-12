@@ -30,21 +30,26 @@ namespace CASCHost
 		private DateTime lastBuild;
 
 
-		public DataWatcher(IHostingEnvironment env)
+        public DataWatcher(IHostingEnvironment env)
 		{
 			_env = env;
 			dataPath = Path.Combine(env.WebRootPath, "Data");
 			outputPath = Path.Combine(env.WebRootPath, "Output");
-			changes = new ConcurrentDictionary<string, FileSystemEventArgs>();
-			lastBuild = new DateTime();
+            changes = new ConcurrentDictionary<string, FileSystemEventArgs>();
+            lastBuild = new DateTime();
 
 			LoadSettings();
+            if (settings.StaticMode)
+            {
+                ForceRebuild();
+                return;
+            }
 
-			//Rebuild if files have changed since last run otherwise wait for a change to occur
-			if (!IsRebuildRequired())
+            //Rebuild if files have changed since last run otherwise wait for a change to occur
+            if (!IsRebuildRequired())
 				timer = new Timer(UpdateCASCDirectory, null, Timeout.Infinite, Timeout.Infinite);
 
-			watcher = new FileSystemWatcher()
+            watcher = new FileSystemWatcher()
 			{
 				Path = dataPath,
 				NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime,
@@ -56,7 +61,7 @@ namespace CASCHost
 			watcher.Created += LogChange;
 			watcher.Deleted += LogChange;
 			watcher.Renamed += LogChange;
-		}
+        }
 
 
 		#region Change Detection
@@ -70,11 +75,11 @@ namespace CASCHost
 			if (string.IsNullOrWhiteSpace(Path.GetExtension(e.FullPath)))
 				return;
 
-			//Update or add change
-			changes.AddOrUpdate(e.FullPath, e, (k, v) => e);
+            //Update or add change
+            changes.AddOrUpdate(e.FullPath, e, (k, v) => e);
 
-			//Add delay for user to finishing changing files
-			timer.Change(30 * 1000, 0);
+            //Add delay for user to finishing changing files
+            timer.Change(30 * 1000, 0);
 		}
 
 		private void LogChange(object sender, RenamedEventArgs e)
@@ -89,16 +94,16 @@ namespace CASCHost
 				foreach (var f in files)
 				{
 					var arg = new RenamedEventArgs(e.ChangeType, Path.GetDirectoryName(f), f, f.Replace(e.FullPath, e.OldFullPath));
-					changes.AddOrUpdate(f, arg, (k, v) => arg); //Set as renamed file
-				}
-			}
+                    changes.AddOrUpdate(f, arg, (k, v) => arg); //Set as renamed file
+                }
+            }
 			else
 			{
-				changes.AddOrUpdate(e.FullPath, e, (k, v) => e);
-			}
+                changes.AddOrUpdate(e.FullPath, e, (k, v) => e);
+            }
 
-			//Add delay for user to finishing changing files
-			timer.Change((int)(30 * 1000), 0);
+            //Add delay for user to finishing changing files
+            timer.Change((int)(30 * 1000), 0);
 		}
 
 		private bool IsDirectory(string dir) => Directory.Exists(dir) || (File.Exists(dir) && File.GetAttributes(dir).HasFlag(FileAttributes.Directory));
@@ -108,18 +113,18 @@ namespace CASCHost
 		#region CASC Update
 		public void ForceRebuild()
 		{
-			//Rebuild all files
-			var files = Directory.EnumerateFiles(dataPath, "*.*", SearchOption.AllDirectories);
-			foreach (var f in files)
+            //Rebuild all files
+            var files = Directory.EnumerateFiles(dataPath, "*.*", SearchOption.AllDirectories).OrderBy(f => f);
+            foreach (var f in files)
 			{
 				if(File.GetLastWriteTime(f) >= lastBuild || File.GetCreationTime(f) >= lastBuild)
 				{
 					var args = new FileSystemEventArgs(WatcherChangeTypes.Changed, Path.GetDirectoryName(f), Path.GetFileName(f));
-					changes.AddOrUpdate(f, args, (k, v) => args);
-				}
-			}
+                    changes.AddOrUpdate(f, args, (k, v) => args);
+                }
+            }
 
-			timer = new Timer(UpdateCASCDirectory, null, 0, Timeout.Infinite);
+            timer = new Timer(UpdateCASCDirectory, null, 0, Timeout.Infinite);
 		}
 
 		private void UpdateCASCDirectory(object obj)
@@ -146,7 +151,8 @@ namespace CASCHost
 			{
 				CASCContainer.OpenDownload();
 				CASCContainer.OpenInstall();
-			}
+				CASCContainer.DownloadInstallAssets();
+            }
 
 			//Remove Purged files
 			foreach (var purge in Startup.Cache.ToPurge)
@@ -156,9 +162,9 @@ namespace CASCHost
 			while (changes.Count > 0)
 			{
 				var key = changes.Keys.First();
-				if (changes.TryRemove(key, out FileSystemEventArgs change))
-				{
-					string fullpath = change.FullPath;
+                if (changes.TryRemove(key, out FileSystemEventArgs change))
+                {
+                    string fullpath = change.FullPath;
 					string cascpath = GetCASCPath(fullpath);
 					string oldpath = GetCASCPath((change as RenamedEventArgs)?.OldFullPath + "");
 
@@ -194,8 +200,12 @@ namespace CASCHost
 			sw.Stop();
 			Startup.Logger.LogWarning($"CASC rebuild finished [{DateTime.Now}] - {Math.Round(sw.Elapsed.TotalSeconds, 3)}s");
 
+            if (settings.StaticMode)
+            {
+                Environment.Exit(0);
+            }
 
-			lastBuild = DateTime.Now;
+            lastBuild = DateTime.Now;
 			RebuildInProgress = false;
 		}
 

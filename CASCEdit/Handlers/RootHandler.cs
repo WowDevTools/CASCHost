@@ -97,7 +97,7 @@ namespace CASCEdit.Handlers
 				if (!CASCContainer.Settings.Cache.HasId(e.FileDataId))
 				{
 					GlobalRoot.Entries.Remove(e);
-					File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, e.MD5.ToString()));
+					File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(e.MD5.ToString(), "data")));
 				}
 			}
 
@@ -235,7 +235,7 @@ namespace CASCEdit.Handlers
 				}
 				else
 				{
-					return DataHandler.ReadDirect(Path.Combine(CASCContainer.Settings.OutputPath, enc.Keys[0].ToString()));
+					return DataHandler.ReadDirect(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(enc.Keys[0].ToString(), "data")));
 				}
 			}
 

@@ -101,10 +101,10 @@ namespace CASCHost
 		public void Clean()
 		{
 			//Delete previous Root and Encoding
-			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ROOT__"].BLTE.ToString())))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ROOT__"].BLTE.ToString()));
-			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ENCODING__"].BLTE.ToString())))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ENCODING__"].BLTE.ToString()));
+			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data"))))
+				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data")));
+			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data"))))
+				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data")));
 		}
 
 
@@ -165,7 +165,7 @@ namespace CASCHost
 					{
 						ToPurge.Add(entry.Path);
 
-						string filepath = Path.Combine(env.WebRootPath, "Output", entry.BLTE.ToString());
+						string filepath = Path.Combine(env.WebRootPath, "Output", Helper.GetCDNPath(entry.BLTE.ToString()));
 						if (File.Exists(filepath))
 							File.Delete(filepath);
 						if (File.Exists(Path.Combine(env.WebRootPath, "Data", entry.Path)))

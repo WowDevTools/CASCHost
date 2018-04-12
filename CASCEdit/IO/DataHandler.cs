@@ -46,7 +46,8 @@ namespace CASCEdit.IO
 
 		public static BLTEStream ReadDirect(string file)
 		{
-			return new BLTEStream(new MemoryStream(File.ReadAllBytes(file)));
+            file = Helper.FixOutputPath(file, "data");
+            return new BLTEStream(new MemoryStream(File.ReadAllBytes(file)));
 		}
 
 		public static void Extract(string file, string savepath, LocalIndexEntry index)
@@ -218,7 +219,7 @@ namespace CASCEdit.IO
 				// Output raw
 				if (mode.HasFlag(WriteMode.CDN))
 				{
-					blte.OutPath = Path.Combine(CASCContainer.Settings.OutputPath, blte.Hash.ToString());
+					blte.OutPath = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(blte.Hash.ToString(), "data"));
 					using (FileStream fs = new FileStream(blte.OutPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
 					{
 						ms.Position = 30; // Skip header

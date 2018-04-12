@@ -37,7 +37,7 @@ namespace CASCEdit.Patch
             if (stream == null)
                 return;
 
-            string outpath = Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(file));
+            string outpath = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(Path.GetFileName(file), "data"));
             using (var fs = new FileStream(outpath, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (var bw = new BinaryWriter(fs))
             {
@@ -75,7 +75,7 @@ namespace CASCEdit.Patch
             if (CASCContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
             {
                 string key = enc.Keys[0].ToString();
-                string outpath = Path.Combine(CASCContainer.Settings.OutputPath, key);
+                string outpath = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(key, "data"));
 
                 if (!File.Exists(outpath))
                 {

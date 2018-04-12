@@ -46,7 +46,7 @@ namespace CASCEdit
             Settings.Cache?.Load();
 
             // load previous build / blizzard build
-            if (File.Exists(Path.Combine(Settings.OutputPath, ".build.info")))
+            if (File.Exists(Path.Combine(Settings.OutputPath, Helper.GetCDNPath(".build.info"))))
             {
                 LoadBuildInfo(Settings.OutputPath);
 
@@ -115,6 +115,8 @@ namespace CASCEdit
             }
             else
             {
+                buildCfgPath = Helper.FixOutputPath(buildCfgPath, "config");
+
                 if (!File.Exists(buildCfgPath))
                 {
                     string url = "/config/" + buildKey.Substring(0, 2) + "/" + buildKey.Substring(2, 2) + "/" + buildKey;
@@ -138,6 +140,8 @@ namespace CASCEdit
             }
             else
             {
+                cdnCfgPath = Helper.FixOutputPath(cdnCfgPath, "config");
+
                 if (!File.Exists(cdnCfgPath))
                 {
                     string url = "/config/" + cdnKey.Substring(0, 2) + "/" + cdnKey.Substring(2, 2) + "/" + cdnKey;
@@ -177,6 +181,8 @@ namespace CASCEdit
             }
             else
             {
+                path = Helper.FixOutputPath(path, "data");
+
                 if (!File.Exists(path))
                 {
                     string url = "/data/" + key.Substring(0, 2) + "/" + key.Substring(2, 2) + "/" + key;
@@ -209,6 +215,7 @@ namespace CASCEdit
             {
                 string key = enc.Keys[0].ToString();
                 string path = Path.Combine(Settings.SystemFilesPath, key);
+                path = Helper.FixOutputPath(path, "data");
 
                 if (!File.Exists(path))
                 {
@@ -242,6 +249,7 @@ namespace CASCEdit
             {
                 string key = enc.Keys[0].ToString();
                 string path = Path.Combine(Settings.SystemFilesPath, key);
+                path = Helper.FixOutputPath(path, "data");
 
                 if (!File.Exists(path))
                 {
@@ -275,6 +283,7 @@ namespace CASCEdit
             {
                 string key = enc.Keys[0].ToString();
                 string path = Path.Combine(Settings.SystemFilesPath, key);
+                path = Helper.FixOutputPath(path, "data");
 
                 if (!File.Exists(path))
                 {
@@ -287,11 +296,40 @@ namespace CASCEdit
             }
         }
 
-		#endregion
+        public static void DownloadInstallAssets()
+        {
+            Logger.LogInformation("Loading Install Assets...");
+
+            List<string> assets = new List<string>()
+            {
+                { "blobs" },
+                { "bgdl" },
+                { "blob/game" },
+                { "blob/install" }
+            };
+
+            foreach(string asset in assets)
+            {
+                string outPath = Path.Combine(Settings.OutputPath, Path.GetFileName(asset));
+
+                if(Settings.StaticMode)
+                {
+                    outPath = Path.Combine(Settings.OutputPath, "wow", asset);
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+
+                if(!File.Exists(outPath)) {
+                    if (!DataHandler.Download(Settings.PatchUrl + "/" + asset, outPath))
+                        Logger.LogCritical($"Unable to download Install {asset}.");
+                }
+            }
+        }
+        #endregion
 
 
-		#region Save CASC
-		public static void Save()
+        #region Save CASC
+        public static void Save()
 		{
 			Settings.Cache?.Clean();
 

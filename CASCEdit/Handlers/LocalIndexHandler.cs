@@ -161,7 +161,7 @@ namespace CASCEdit.Handlers
                     var version = long.Parse(Path.GetFileNameWithoutExtension(index.BaseFile).Substring(2), NumberStyles.HexNumber);
                     string filename = bucket + version.ToString("X8") + ".idx";
 
-                    var path = Path.Combine(CASCContainer.Settings.OutputPath, filename.ToLowerInvariant());
+                    var path = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(filename.ToLowerInvariant(), "data"));
 
                     using (var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
                     {

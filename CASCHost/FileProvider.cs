@@ -28,7 +28,7 @@ namespace CASCHost
 
 		public IFileInfo GetFileInfo(string subpath)
 		{
-			string fullPath = Path.Combine(outPath, Path.GetFileName(subpath));
+			string fullPath = Path.Combine(outPath, (Startup.Settings.StaticMode ? subpath.TrimStart('/') : Path.GetFileName(subpath)));
 
 			if (ProcessCommands(subpath))
 				return new NotFoundFileInfo(fullPath);

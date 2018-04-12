@@ -25,6 +25,8 @@ Before using CASCHost the settings found in `appsettings.json` will need to be a
 	* Sets the password required for the rebuild command
 * BNetAppSupport:
 	* This enables the creation of the Install and Download files which are only required if you're deploying your client via the B-Net App
+* StaticMode:
+	* Create under wwwroot\output the original Blizzard CDN structure to host a CDN with Apache or nginx (This option disable all CASCHost hosting features)
 * HostDomain: 
 	* This is the public address of this web service
 	* Note: This must be "localhost" or a domain, IP addresses are NOT supported however ports ARE

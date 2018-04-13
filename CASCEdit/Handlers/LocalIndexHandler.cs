@@ -186,6 +186,8 @@ namespace CASCEdit.Handlers
 
         public List<LocalIndexSpace> GetEmptySpace(ulong minsize = 0x100)
         {
+			// implementation of shmem
+
             List<LocalIndexSpace> space = new List<LocalIndexSpace>();
 
             var datagroups = LocalIndices.SelectMany(x => x.Entries).GroupBy(x => x.Archive).Select(x => x.OrderBy(y => y.Offset).ToList());

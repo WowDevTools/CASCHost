@@ -14,15 +14,30 @@ namespace CASCEdit.Handlers
 {
 	public class DownloadHandler
 	{
-		private DownloadHeader Header;
-		private List<DownloadEntry> Entries = new List<DownloadEntry>();
-		private List<DownloadTag> Tags = new List<DownloadTag>();
+		public List<DownloadEntry> Entries = new List<DownloadEntry>();
+		public List<DownloadTag> Tags = new List<DownloadTag>();
 
+		private DownloadHeader Header;
 		private int[] endofStageIndex;
 		private EncodingMap[] EncodingMap;
 
+		public DownloadHandler()
+		{
+			Header = new DownloadHeader();
+			EncodingMap = new[]
+			{
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.ZLib, 9)
+			};
+		}
+
 		public DownloadHandler(BLTEStream blte)
 		{
+
+			if (blte.Length != long.Parse(CASCContainer.BuildConfig["download-size"][0]))
+				CASCContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Download File is corrupt.");
+
 			using (var br = new BinaryReader(blte))
 			{
 				Header = new DownloadHeader()
@@ -51,7 +66,7 @@ namespace CASCEdit.Handlers
 				}
 
 				// tags
-				int numMaskBytes = ~~((int)Header.NumEntries + 7) / 8;
+				int numMaskBytes = ((int)Header.NumEntries + 7) / 8;
 				for (int i = 0; i < Header.NumTags; i++)
 				{
 					var tag = new DownloadTag()
@@ -134,8 +149,8 @@ namespace CASCEdit.Handlers
 				bw.Write(Header.Version);
 				bw.Write(Header.ChecksumSize);
 				bw.Write(Header.Unknown);
-				bw.WriteUInt32BE(Header.NumEntries);
-				bw.WriteUInt16BE(Header.NumTags);
+				bw.WriteUInt32BE((uint)Entries.Count);
+				bw.WriteUInt16BE((ushort)Tags.Count);
 
 				entries[0] = ms.ToArray();
 				files[0] = new CASCFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);

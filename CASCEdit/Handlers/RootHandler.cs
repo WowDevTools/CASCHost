@@ -24,6 +24,12 @@ namespace CASCEdit.Handlers
 		private readonly uint minimumId;
 		private readonly EncodingMap encodingMap;
 
+		public RootHandler()
+		{
+			GlobalRoot = new RootChunk() { ContentFlags = ContentFlags.None, LocaleFlags = LocaleFlags.All_WoW };
+			encodingMap = new EncodingMap(EncodingType.ZLib, 9);
+		}
+
 		public RootHandler(Stream data, LocaleFlags locale, uint minimumid = 0)
 		{
 			this.minimumId = minimumid;

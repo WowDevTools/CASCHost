@@ -23,8 +23,26 @@ namespace CASCEdit.Handlers
         public SortedList<MD5Hash, EncodingEntry> Data = new SortedList<MD5Hash, EncodingEntry>(new HashComparer());
         public SortedList<MD5Hash, EncodingLayout> Layout = new SortedList<MD5Hash, EncodingLayout>(new HashComparer());
 
+		public EncodingHandler()
+		{
+			Header = new EncodingHeader();
+			EncodingMap = new[]
+			{
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.ZLib, 9),
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.ZLib, 9),
+			};
+		}
+
         public EncodingHandler(BLTEStream blte)
         {
+			if (blte.Length != long.Parse(CASCContainer.BuildConfig["encoding-size"][0]))
+				CASCContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Encoding File is corrupt.");				
+
             BinaryReader stream = new BinaryReader(blte);
 
             Header = new EncodingHeader()
@@ -37,8 +55,7 @@ namespace CASCEdit.Handlers
                 FlagsB = stream.ReadUInt16(),
                 NumEntriesA = stream.ReadUInt32BE(),
                 NumEntriesB = stream.ReadUInt32BE(),
-                _9 = stream.ReadByte(),
-                StringBlockSize = stream.ReadUInt32BE() // TODO change me to 40BE
+                StringBlockSize = stream.ReadUInt40BE()
             };
 
 			// stringTableA
@@ -291,8 +308,7 @@ namespace CASCEdit.Handlers
                 bw.Write(Header.FlagsB);
                 bw.WriteUInt32BE((uint)entries[2].Length / 32);
                 bw.WriteUInt32BE((uint)entries[4].Length / 32);
-                bw.Write(Header._9);
-                bw.WriteUInt32BE((uint)Encoding.UTF8.GetByteCount(string.Join("\0", LayoutStringTable))); // TODO change me to 40BE
+                bw.WriteUInt40BE((ulong)Encoding.UTF8.GetByteCount(string.Join("\0", LayoutStringTable)));
 
                 entries[0] = ms.ToArray();
                 files[0] = new CASCFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);

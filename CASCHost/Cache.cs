@@ -27,7 +27,7 @@ namespace CASCHost
 		public bool HasId(uint fileid) => RootFiles.Any(x => x.Value.FileDataId == fileid);
 
 		private IHostingEnvironment env;
-		private string Patchpath => Path.Combine(CASCContainer.Settings.OutputPath, ".patch");
+		private string Patchpath => Path.Combine(CASContainer.Settings.OutputPath, ".patch");
 		private Dictionary<string, CacheEntry> RootFiles;
 		private Queue<string> queries = new Queue<string>();
 		private bool firstrun = true;
@@ -108,10 +108,10 @@ namespace CASCHost
 		public void Clean()
 		{
 			//Delete previous Root and Encoding
-			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ROOT__"].BLTE.ToString())))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ROOT__"].BLTE.ToString()));
-			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ENCODING__"].BLTE.ToString())))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, RootFiles["__ENCODING__"].BLTE.ToString()));
+			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, RootFiles["__ROOT__"].BLTE.ToString())))
+				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, RootFiles["__ROOT__"].BLTE.ToString()));
+			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, RootFiles["__ENCODING__"].BLTE.ToString())))
+				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, RootFiles["__ENCODING__"].BLTE.ToString()));
 		}
 
 

@@ -54,7 +54,7 @@ namespace CASCEdit.IO
             uint size = (uint)reader.BaseStream.Length;
             if (size < 8)
             {
-                CASCContainer.Logger.LogCritical($"Not enough data");
+                CASContainer.Logger.LogCritical($"Not enough data");
                 return;
             }
 
@@ -62,7 +62,7 @@ namespace CASCEdit.IO
 
             if (magic != BLTE_MAGIC)
             {
-                CASCContainer.Logger.LogCritical("Incorrect magic");
+                CASContainer.Logger.LogCritical("Incorrect magic");
                 return;
             }
 
@@ -73,7 +73,7 @@ namespace CASCEdit.IO
             {
                 if (size < 12)
                 {
-                    CASCContainer.Logger.LogCritical($"Not enough data: {12}");
+                    CASContainer.Logger.LogCritical($"Not enough data: {12}");
                     return;
                 }
 
@@ -82,7 +82,7 @@ namespace CASCEdit.IO
 
                 if (flags != 0x0F || chunkCount == 0)
                 {
-                    CASCContainer.Logger.LogCritical($"Bad table format 0x{flags.ToString("X2")}, numBlocks {chunkCount}");
+                    CASContainer.Logger.LogCritical($"Bad table format 0x{flags.ToString("X2")}, numBlocks {chunkCount}");
                     return;
                 }
 
@@ -90,13 +90,13 @@ namespace CASCEdit.IO
                 uint frameHeaderSize = 24 * chunkCount + 12;
                 if (headerSize != frameHeaderSize)
                 {
-                    CASCContainer.Logger.LogCritical("Header size mismatch");
+                    CASContainer.Logger.LogCritical("Header size mismatch");
                     return;
                 }
 
                 if (size < frameHeaderSize)
                 {
-                    CASCContainer.Logger.LogCritical($"Not enough data: {frameHeaderSize}");
+                    CASContainer.Logger.LogCritical($"Not enough data: {frameHeaderSize}");
                     return;
                 }
             }
@@ -149,7 +149,7 @@ namespace CASCEdit.IO
                     memStream.Write(data, 1, data.Length - 1);
                     break;
                 default:
-                    CASCContainer.Logger.LogCritical($"Unknown BLTE block type {(char)block.Encoding} (0x{block.Encoding.ToString("X2")})");
+                    CASContainer.Logger.LogCritical($"Unknown BLTE block type {(char)block.Encoding} (0x{block.Encoding.ToString("X2")})");
                     return false;
             }
 

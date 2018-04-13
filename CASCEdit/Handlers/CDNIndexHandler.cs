@@ -19,12 +19,12 @@ namespace CASCEdit.Handlers
 		{
 			if (load)
 			{
-				CASCContainer.Logger.LogInformation("Loading CDN Indices...");
+				CASContainer.Logger.LogInformation("Loading CDN Indices...");
 
-				for (int i = 0; i < CASCContainer.CDNConfig["archives"].Count; i++)
+				for (int i = 0; i < CASContainer.CDNConfig["archives"].Count; i++)
 				{
-					string archive = CASCContainer.CDNConfig["archives"][i];
-					string path = Path.Combine(CASCContainer.BasePath, "Data", "indices", archive + ".index");
+					string archive = CASContainer.CDNConfig["archives"][i];
+					string path = Path.Combine(CASContainer.BasePath, "Data", "indices", archive + ".index");
 
 					Archives.Add(new ArchiveIndexHandler(path));
 				}
@@ -36,17 +36,17 @@ namespace CASCEdit.Handlers
 		}
 
 
-		public void CreateArchive(List<CASCResult> entries)
+		public void CreateArchive(List<CASResult> entries)
 		{
 			ArchiveIndexHandler archive = Archives[0];
 
 			//Remove missing existing entries
-			archive.Entries.RemoveAll(x => !File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, x.Hash.ToString())));
+			archive.Entries.RemoveAll(x => !File.Exists(Path.Combine(CASContainer.Settings.OutputPath, x.Hash.ToString())));
 
 			//Add entries
 			foreach (var blte in entries)
 			{
-				if (!File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, blte.Hash.ToString())))
+				if (!File.Exists(Path.Combine(CASContainer.Settings.OutputPath, blte.Hash.ToString())))
 					continue;
 
 				var entry = new IndexEntry()
@@ -64,7 +64,7 @@ namespace CASCEdit.Handlers
 			{
 				if (File.Exists(archive.BaseFile))
 					File.Delete(archive.BaseFile);
-				CASCContainer.CDNConfig["archives"].RemoveAll(x => x == Path.GetFileNameWithoutExtension(archive.BaseFile));
+				CASContainer.CDNConfig["archives"].RemoveAll(x => x == Path.GetFileNameWithoutExtension(archive.BaseFile));
 				return;
 			}
 
@@ -72,7 +72,7 @@ namespace CASCEdit.Handlers
 			string path = archive.Write();
 
 			//Create data file
-			CASCContainer.Logger.LogInformation("Saving CDN Index data... This may take a while.");
+			CASContainer.Logger.LogInformation("Saving CDN Index data... This may take a while.");
 			string datapath = Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path));
 			using (var fs = new FileStream(datapath, FileMode.Create, FileAccess.Write, FileShare.Read))
 			{
@@ -80,7 +80,7 @@ namespace CASCEdit.Handlers
 
 				foreach (var entry in archive.Entries)
 				{
-					string entrypath = Path.Combine(CASCContainer.Settings.OutputPath, entry.Hash.ToString());
+					string entrypath = Path.Combine(CASContainer.Settings.OutputPath, entry.Hash.ToString());
 					new FileInfo(entrypath).OpenRead().CopyTo(fs);
 					fs.Flush();
 				}
@@ -94,7 +94,7 @@ namespace CASCEdit.Handlers
 				File.Delete(oldata);
 			}
 
-			CASCContainer.Logger.LogInformation("CDN Index: " + Path.GetFileName(path));
+			CASContainer.Logger.LogInformation("CDN Index: " + Path.GetFileName(path));
 		}
 
 		public void RemoveEntry(MD5Hash hash)
@@ -105,7 +105,7 @@ namespace CASCEdit.Handlers
 
 		private ArchiveIndexHandler OpenOrCreate()
 		{
-			var files = Directory.EnumerateFiles(CASCContainer.Settings.OutputPath, "*.index");
+			var files = Directory.EnumerateFiles(CASContainer.Settings.OutputPath, "*.index");
 			if (!files.Any())
 				return new ArchiveIndexHandler();
 			else

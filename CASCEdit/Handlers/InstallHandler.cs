@@ -31,8 +31,8 @@ namespace CASCEdit.Handlers
 
 		public InstallHandler(BLTEStream blte)
 		{
-			if (blte.Length != long.Parse(CASCContainer.BuildConfig["install-size"][0]))
-				CASCContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Install File is corrupt.");
+			if (blte.Length != long.Parse(CASContainer.BuildConfig["install-size"][0]))
+				CASContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Install File is corrupt.");
 
 			BinaryReader stream = new BinaryReader(blte);
 
@@ -78,13 +78,13 @@ namespace CASCEdit.Handlers
 			blte?.Dispose();
 		}
 
-		public void Write(List<CASCResult> newentries)
+		public void Write(List<CASResult> newentries)
 		{
 			if (!NeedsWrite(newentries))
 				return;
 
 			byte[][] entries = new byte[EncodingMap.Length][];
-			CASCFile[] files = new CASCFile[EncodingMap.Length];
+			CASFile[] files = new CASFile[EncodingMap.Length];
 
 			// header
 			using (var ms = new MemoryStream())
@@ -105,7 +105,7 @@ namespace CASCEdit.Handlers
 				}
 
 				entries[0] = ms.ToArray();
-				files[0] = new CASCFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
+				files[0] = new CASFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
 			}
 
 			// entries
@@ -122,26 +122,26 @@ namespace CASCEdit.Handlers
 				}
 
 				entries[1] = ms.ToArray();
-				files[1] = new CASCFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
+				files[1] = new CASFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
 			}
 
 			// write
-			CASCResult res = DataHandler.Write(WriteMode.CDN, files);
+			CASResult res = DataHandler.Write(WriteMode.CDN, files);
 			using (var md5 = MD5.Create())
 				res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
 
 			Console.WriteLine($"Install: Hash: {res.Hash} Data: {res.DataHash}");
 
-			CASCContainer.BuildConfig.Set("install-size", res.DecompressedSize.ToString());
-			CASCContainer.BuildConfig.Set("install-size", (res.CompressedSize - 30).ToString(), 1); // BLTE size minus header
-			CASCContainer.BuildConfig.Set("install", res.DataHash.ToString());
-			CASCContainer.BuildConfig.Set("install", res.Hash.ToString(), 1);
+			CASContainer.BuildConfig.Set("install-size", res.DecompressedSize.ToString());
+			CASContainer.BuildConfig.Set("install-size", (res.CompressedSize - 30).ToString(), 1); // BLTE size minus header
+			CASContainer.BuildConfig.Set("install", res.DataHash.ToString());
+			CASContainer.BuildConfig.Set("install", res.Hash.ToString(), 1);
 
 			Array.Resize(ref entries, 0);
 			Array.Resize(ref files, 0);
 		}
 
-		private bool NeedsWrite(List<CASCResult> entries)
+		private bool NeedsWrite(List<CASResult> entries)
 		{
 			// files that mean we need to edit the install file
 			string[] files = new[] { "wow.exe", "wow-64.exe", @"world of warcraft.app\contents\macos\world of warcraft" };

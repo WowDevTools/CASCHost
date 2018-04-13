@@ -71,7 +71,7 @@ namespace CASCEdit.IO
 		#region Download
 		public static bool Download(string url, string savepath)
 		{
-			CASCContainer.Logger.LogInformation($"Downloading {Path.GetFileName(url)}...");
+			CASContainer.Logger.LogInformation($"Downloading {Path.GetFileName(url)}...");
 
 			if (Uri.IsWellFormedUriString(url, UriKind.Absolute))
 			{
@@ -79,7 +79,7 @@ namespace CASCEdit.IO
 			}
 			else
 			{
-				foreach (var host in CASCContainer.Settings.DownloadLocations)
+				foreach (var host in CASContainer.Settings.DownloadLocations)
 					if (DoDownload(host + url, savepath))
 						return true;
 			}
@@ -125,11 +125,11 @@ namespace CASCEdit.IO
 		#endregion
 
 		#region Write BLTE/CASC
-		public static CASCResult Write(WriteMode mode, params CASCFile[] entries)
+		public static CASResult Write(WriteMode mode, params CASFile[] entries)
 		{
-			CASCContainer.Logger.LogInformation("Writing data...");
+			CASContainer.Logger.LogInformation("Writing data...");
 
-			var path = Path.Combine(CASCContainer.Settings.OutputPath, "Data", "data");
+			var path = Path.Combine(CASContainer.Settings.OutputPath, "Data", "data");
 			string filename = "dummy.000";
 
 			// calculate local data file
@@ -188,7 +188,7 @@ namespace CASCEdit.IO
 				bw.BaseStream.Read(buffer, 0, buffer.Length);
 				var hash = md5.ComputeHash(buffer);
 
-				CASCResult blte = new CASCResult()
+				CASResult blte = new CASResult()
 				{
 					DecompressedSize = (uint)entries.Sum(x => x.DecompressedSize),
 					CompressedSize = (uint)(bw.BaseStream.Length - posStart),
@@ -218,7 +218,7 @@ namespace CASCEdit.IO
 				// Output raw
 				if (mode.HasFlag(WriteMode.CDN))
 				{
-					blte.OutPath = Path.Combine(CASCContainer.Settings.OutputPath, blte.Hash.ToString());
+					blte.OutPath = Path.Combine(CASContainer.Settings.OutputPath, blte.Hash.ToString());
 					using (FileStream fs = new FileStream(blte.OutPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
 					{
 						ms.Position = 30; // Skip header
@@ -235,7 +235,7 @@ namespace CASCEdit.IO
 
 		private static string GetDataFile(long bytes)
 		{
-			string path = Path.Combine(CASCContainer.BasePath, "Data", "data");
+			string path = Path.Combine(CASContainer.BasePath, "Data", "data");
 			string prevDataFile = Directory.EnumerateFiles(path, "data.*").OrderByDescending(x => x).First();
 			long remaining = (0x40000000L - new FileInfo(prevDataFile).Length);
 

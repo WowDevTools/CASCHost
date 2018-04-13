@@ -21,7 +21,7 @@ namespace CASCEdit.Handlers
 
         public LocalIndexHandler()
         {
-            CASCContainer.Logger.LogInformation("Loading Local Indices...");
+            CASContainer.Logger.LogInformation("Loading Local Indices...");
             GetFiles();
             Read();
         }
@@ -74,7 +74,7 @@ namespace CASCEdit.Handlers
             }
         }
 
-        public void AddEntry(CASCResult blte)
+        public void AddEntry(CASResult blte)
         {
             var entry = new LocalIndexEntry()
             {
@@ -161,7 +161,7 @@ namespace CASCEdit.Handlers
                     var version = long.Parse(Path.GetFileNameWithoutExtension(index.BaseFile).Substring(2), NumberStyles.HexNumber);
                     string filename = bucket + version.ToString("X8") + ".idx";
 
-                    var path = Path.Combine(CASCContainer.Settings.OutputPath, filename.ToLowerInvariant());
+                    var path = Path.Combine(CASContainer.Settings.OutputPath, filename.ToLowerInvariant());
 
                     using (var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
                     {
@@ -215,7 +215,7 @@ namespace CASCEdit.Handlers
 
         private void GetFiles()
         {
-            string dataPath = Path.Combine(CASCContainer.BasePath, "Data", "data");
+            string dataPath = Path.Combine(CASContainer.BasePath, "Data", "data");
             for (int i = 0; i < 0x10; i++)
             {
                 var files = Directory.EnumerateFiles(dataPath, string.Format("{0:X2}*.idx", i));

@@ -34,7 +34,7 @@ namespace CASCEdit.Configs
 
             if (Uri.IsWellFormedUriString(file, UriKind.Absolute)) // URLs require streaming
             {
-                BaseFile = Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(file)); // set the correct Output path
+                BaseFile = Path.Combine(CASContainer.Settings.OutputPath, Path.GetFileName(file)); // set the correct Output path
 				stream = DataHandler.Stream(file);
             }
 			else
@@ -51,13 +51,13 @@ namespace CASCEdit.Configs
 			}
 			else
 			{
-				CASCContainer.Logger.LogCritical($"Unable to download or open {file}.");
+				CASContainer.Logger.LogCritical($"Unable to download or open {file}.");
 			}
 		}
 
         public void Write()
         {
-            var path = Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(BaseFile));
+            var path = Path.Combine(CASContainer.Settings.OutputPath, Path.GetFileName(BaseFile));
             using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (var writer = new StreamWriter(stream))
             {
@@ -137,7 +137,7 @@ namespace CASCEdit.Configs
             }
 
             if (Data.Count == 0)
-                CASCContainer.Logger.LogError($"Invalid config file: {Path.GetFileName(BaseFile)}");
+                CASContainer.Logger.LogError($"Invalid config file: {Path.GetFileName(BaseFile)}");
         }
 
         private string GetLineTerminator(string content)

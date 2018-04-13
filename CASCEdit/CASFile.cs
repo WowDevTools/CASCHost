@@ -9,14 +9,14 @@ using System.Text;
 
 namespace CASCEdit
 {
-    public class CASCFile
+    public class CASFile
     {
         public uint CompressedSize;
         public uint DecompressedSize;
         public byte[] Data;
         public MD5Hash DataHash;
 
-        public CASCFile(byte[] data, EncodingType encoding, byte compression = 9)
+        public CASFile(byte[] data, EncodingType encoding, byte compression = 9)
         {
             DecompressedSize = (uint)data.Length;
 

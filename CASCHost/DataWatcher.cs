@@ -279,9 +279,12 @@ namespace CASCHost
                 StaticMode = Startup.Settings.StaticMode
             };
 
-			settings.CDNs.Add(settings.Host);
+            if(!settings.StaticMode)
+            {
+                settings.CDNs.Add(settings.Host);
+            }
 
-			if (Startup.Settings.CDNs != null)
+            if (Startup.Settings.CDNs != null)
 				foreach (var cdn in Startup.Settings.CDNs)
 					settings.CDNs.Add(cdn);
 		}

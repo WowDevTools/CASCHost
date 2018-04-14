@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CASCEdit
 {
-    public class CASCSettings
+    public class CASSettings
     {
         public bool Basic { get; set; } = false;
         public string BasePath { get; set; }

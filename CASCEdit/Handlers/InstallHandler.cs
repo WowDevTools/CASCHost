@@ -13,14 +13,27 @@ namespace CASCEdit.Handlers
 {
 	public class InstallHandler
 	{
-		private InstallHeader Header;
-		private List<InstallEntry> InstallData = new List<InstallEntry>();
-		private List<InstallTag> Tags = new List<InstallTag>();
+		public List<InstallEntry> InstallData = new List<InstallEntry>();
+		public List<InstallTag> Tags = new List<InstallTag>();
 
+		private InstallHeader Header;
 		private EncodingMap[] EncodingMap;
+
+		public InstallHandler()
+		{
+			Header = new InstallHeader();
+			EncodingMap = new[]
+			{
+				new EncodingMap(EncodingType.ZLib, 9),
+				new EncodingMap(EncodingType.None, 6),
+			};
+		}
 
 		public InstallHandler(BLTEStream blte)
 		{
+			if (blte.Length != long.Parse(CASContainer.BuildConfig["install-size"][0]))
+				CASContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Install File is corrupt.");
+
 			BinaryReader stream = new BinaryReader(blte);
 
 			Header = new InstallHeader()
@@ -33,14 +46,14 @@ namespace CASCEdit.Handlers
 			};
 
 			// tags            
-			int numMaskBytes = ~~(int)(Header.NumEntries + 7) / 8;
+			int numMaskBytes = (int)(Header.NumEntries + 7) / 8;
 			for (int i = 0; i < Header.NumTags; i++)
 			{
 				InstallTag tag = new InstallTag()
 				{
 					Name = stream.ReadCString(),
 					Type = stream.ReadUInt16BE(),
-					BitMask = stream.ReadBytes(numMaskBytes)
+					BitMask = new BoolArray(stream.ReadBytes(numMaskBytes))
 				};
 
 				Tags.Add(tag);
@@ -65,13 +78,13 @@ namespace CASCEdit.Handlers
 			blte?.Dispose();
 		}
 
-		public void Write(List<CASCResult> newentries)
+		public void Write(List<CASResult> newentries)
 		{
 			if (!NeedsWrite(newentries))
 				return;
 
 			byte[][] entries = new byte[EncodingMap.Length][];
-			CASCFile[] files = new CASCFile[EncodingMap.Length];
+			CASFile[] files = new CASFile[EncodingMap.Length];
 
 			// header
 			using (var ms = new MemoryStream())
@@ -80,19 +93,19 @@ namespace CASCEdit.Handlers
 				bw.Write(Header.Magic);
 				bw.Write(Header.Version);
 				bw.Write(Header.HashSize);
-				bw.WriteUInt16BE(Header.NumTags);
-				bw.WriteUInt32BE(Header.NumEntries);
+				bw.WriteUInt16BE((ushort)Tags.Count);
+				bw.WriteUInt32BE((uint)InstallData.Count);
 
 				foreach (var tag in Tags)
 				{
 					bw.Write(Encoding.UTF8.GetBytes(tag.Name));
 					bw.Write((byte)0);
 					bw.WriteUInt16BE(tag.Type);
-					bw.Write(tag.BitMask);
+					bw.Write(tag.BitMask.ToByteArray());
 				}
 
 				entries[0] = ms.ToArray();
-				files[0] = new CASCFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
+				files[0] = new CASFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
 			}
 
 			// entries
@@ -109,39 +122,39 @@ namespace CASCEdit.Handlers
 				}
 
 				entries[1] = ms.ToArray();
-				files[1] = new CASCFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
+				files[1] = new CASFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
 			}
 
 			// write
-			CASCResult res = DataHandler.Write(WriteMode.CDN, files);
+			CASResult res = DataHandler.Write(WriteMode.CDN, files);
 			using (var md5 = MD5.Create())
 				res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
 
 			Console.WriteLine($"Install: Hash: {res.Hash} Data: {res.DataHash}");
 
-			CASCContainer.BuildConfig.Set("install-size", res.DecompressedSize.ToString());
-			CASCContainer.BuildConfig.Set("install-size", (res.CompressedSize - 30).ToString(), 1); // BLTE size minus header
-			CASCContainer.BuildConfig.Set("install", res.DataHash.ToString());
-			CASCContainer.BuildConfig.Set("install", res.Hash.ToString(), 1);
+			CASContainer.BuildConfig.Set("install-size", res.DecompressedSize.ToString());
+			CASContainer.BuildConfig.Set("install-size", (res.CompressedSize - 30).ToString(), 1); // BLTE size minus header
+			CASContainer.BuildConfig.Set("install", res.DataHash.ToString());
+			CASContainer.BuildConfig.Set("install", res.Hash.ToString(), 1);
 
 			Array.Resize(ref entries, 0);
 			Array.Resize(ref files, 0);
 		}
 
-		private bool NeedsWrite(List<CASCResult> entries)
+		private bool NeedsWrite(List<CASResult> entries)
 		{
 			// files that mean we need to edit the install file
-			string[] files = new[] { "wow.exe", "wow-64.exe", @"world of warcraft.app\contents\macos\world of warcraft" }; 
+			string[] files = new[] { "wow.exe", "wow-64.exe", @"world of warcraft.app\contents\macos\world of warcraft" };
 
 			bool needswrite = false;
-			foreach(var file in files)
+			foreach (var file in files)
 			{
 				var entry = entries.Where(x => !string.IsNullOrWhiteSpace(x?.Path)).FirstOrDefault(x => x.Path.ToLower().EndsWith(file));
 				var existing = InstallData.FirstOrDefault(x => x.Name.ToLower() == file);
 
 				if (entry != null && existing != null)
-				{					
-					if(entry.DataHash != existing.MD5 || entry.DecompressedSize != existing.Size)
+				{
+					if (entry.DataHash != existing.MD5 || entry.DecompressedSize != existing.Size)
 					{
 						existing.MD5 = entry.DataHash;
 						existing.Size = entry.DecompressedSize;
@@ -149,10 +162,10 @@ namespace CASCEdit.Handlers
 					}
 				}
 			}
-			
+
 			return needswrite;
 		}
-		
+
 		public InstallEntry GetEntry(string name)
 		{
 			return InstallData.FirstOrDefault(i => i.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));

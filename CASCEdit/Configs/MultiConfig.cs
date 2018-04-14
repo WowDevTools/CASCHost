@@ -85,9 +85,9 @@ namespace CASCEdit.Configs
 
                 //Save file to disk
                 string hash = md5.ComputeHash(stream.ToArray()).ToMD5String();
-                var path = Path.Combine(CASCContainer.Settings.OutputPath, hash);
+                var path = Path.Combine(CASContainer.Settings.OutputPath, hash);
 
-                File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(BasePath))); // remove old
+                File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Path.GetFileName(BasePath))); // remove old
 
                 using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)) // save new
                 {

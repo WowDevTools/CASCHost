@@ -16,13 +16,19 @@ namespace CASCEdit.Handlers
 	public class RootHandler : IDisposable
 	{
 		public RootChunk GlobalRoot { get; private set; }
-		public Dictionary<string, CASCFile> NewFiles { get; private set; } = new Dictionary<string, CASCFile>();
+		public Dictionary<string, CASFile> NewFiles { get; private set; } = new Dictionary<string, CASFile>();
 		public List<RootChunk> Chunks { get; private set; } = new List<RootChunk>();
 
 		private LocaleFlags locale;
 		private uint maxId = 0;
 		private readonly uint minimumId;
 		private readonly EncodingMap encodingMap;
+
+		public RootHandler()
+		{
+			GlobalRoot = new RootChunk() { ContentFlags = ContentFlags.None, LocaleFlags = LocaleFlags.All_WoW };
+			encodingMap = new EncodingMap(EncodingType.ZLib, 9);
+		}
 
 		public RootHandler(Stream data, LocaleFlags locale, uint minimumid = 0)
 		{
@@ -72,12 +78,12 @@ namespace CASCEdit.Handlers
 
 			if (GlobalRoot == null)
 			{
-				CASCContainer.Logger.LogCritical($"No Global root found. Root file is corrupt.");
+				CASContainer.Logger.LogCritical($"No Global root found. Root file is corrupt.");
 				return;
 			}
 
 			// set maxid from cache
-			maxId = Math.Max(Math.Max(maxId, minimumid), CASCContainer.Settings.Cache?.MaxId ?? 0);
+			maxId = Math.Max(Math.Max(maxId, minimumid), CASContainer.Settings.Cache?.MaxId ?? 0);
 
 			// store encoding map
 			encodingMap = (data as BLTEStream)?.EncodingMap.FirstOrDefault() ?? new EncodingMap(EncodingType.ZLib, 9);
@@ -88,22 +94,22 @@ namespace CASCEdit.Handlers
 
 		public void RemoveDeleted()
 		{
-			if (CASCContainer.Settings?.Cache == null)
+			if (CASContainer.Settings?.Cache == null)
 				return;
 
 			var entries = GlobalRoot.Entries.Where(x => x.FileDataId >= minimumId).ToList(); // avoid collection change errors
 			foreach (var e in entries)
 			{
-				if (!CASCContainer.Settings.Cache.HasId(e.FileDataId))
+				if (!CASContainer.Settings.Cache.HasId(e.FileDataId))
 				{
 					GlobalRoot.Entries.Remove(e);
-					File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, e.MD5.ToString()));
+					File.Delete(Path.Combine(CASContainer.Settings.OutputPath, e.MD5.ToString()));
 				}
 			}
 
 		}
 
-		public void AddEntry(string path, CASCResult file)
+		public void AddEntry(string path, CASResult file)
 		{
 			ulong hash = new Jenkins96().ComputeHash(path);
 			bool found = false;
@@ -133,7 +139,7 @@ namespace CASCEdit.Handlers
 					if (root == GlobalRoot)
 						maxId = Math.Max(entry.FileDataId, maxId); // update max id				
 
-					CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
+					CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
 				}
 			}
 
@@ -148,14 +154,14 @@ namespace CASCEdit.Handlers
 					Path = path
 				};
 
-				var cache = CASCContainer.Settings.Cache.Entries.FirstOrDefault(x => x.Path == path);
+				var cache = CASContainer.Settings.Cache.Entries.FirstOrDefault(x => x.Path == path);
 				if (cache?.Path != path) // get cache id
 					entry.FileDataId = Math.Max(maxId + 1, minimumId); // calculate the Id 
 
 				GlobalRoot.Entries.Add(entry); // add new
 
 				maxId = Math.Max(entry.FileDataId, maxId); // Update max id
-				CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
+				CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
 			}
 		}
 
@@ -176,7 +182,7 @@ namespace CASCEdit.Handlers
 			}
 		}
 
-		public CASCResult Write()
+		public CASResult Write()
 		{
 			FixOffsets();
 
@@ -202,18 +208,18 @@ namespace CASCEdit.Handlers
 				}
 
 				// create CASCFile
-				CASCFile entry = new CASCFile(ms.ToArray(), encodingMap.Type, encodingMap.CompressionLevel);
+				CASFile entry = new CASFile(ms.ToArray(), encodingMap.Type, encodingMap.CompressionLevel);
 
 				// save and update Build Config
-				CASCResult res = DataHandler.Write(WriteMode.CDN, entry);
+				CASResult res = DataHandler.Write(WriteMode.CDN, entry);
 				res.DataHash = new MD5Hash(md5.ComputeHash(ms.ToArray()));
 				res.HighPriority = true;
-				CASCContainer.BuildConfig.Set("root", res.DataHash.ToString());
+				CASContainer.BuildConfig.Set("root", res.DataHash.ToString());
 
-				CASCContainer.Logger.LogInformation($"Root: Hash: {res.Hash} Data: {res.DataHash}");
+				CASContainer.Logger.LogInformation($"Root: Hash: {res.Hash} Data: {res.DataHash}");
 
 				// cache Root Hash
-				CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { MD5 = res.DataHash, BLTE = res.Hash, Path = "__ROOT__" });
+				CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { MD5 = res.DataHash, BLTE = res.Hash, Path = "__ROOT__" });
 
 				return res;
 			}
@@ -225,17 +231,17 @@ namespace CASCEdit.Handlers
 		public BLTEStream OpenFile(string cascpath)
 		{
 			var entry = GetEntry(cascpath);
-			if (entry != null && CASCContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
+			if (entry != null && CASContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
 			{
-				LocalIndexEntry idxInfo = CASCContainer.LocalIndexHandler.GetIndexInfo(enc.Keys[0]);
+				LocalIndexEntry idxInfo = CASContainer.LocalIndexHandler.GetIndexInfo(enc.Keys[0]);
 				if (idxInfo != null)
 				{
-					var path = Path.Combine(CASCContainer.BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
+					var path = Path.Combine(CASContainer.BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
 					return DataHandler.Read(path, idxInfo);
 				}
 				else
 				{
-					return DataHandler.ReadDirect(Path.Combine(CASCContainer.Settings.OutputPath, enc.Keys[0].ToString()));
+					return DataHandler.ReadDirect(Path.Combine(CASContainer.Settings.OutputPath, enc.Keys[0].ToString()));
 				}
 			}
 
@@ -245,7 +251,7 @@ namespace CASCEdit.Handlers
 		public void AddFile(string filepath, string cascpath, EncodingType encoding = EncodingType.ZLib, byte compression = 9)
 		{
 			if (File.Exists(filepath))
-				NewFiles.Add(cascpath, new CASCFile(File.ReadAllBytes(filepath), encoding, compression));
+				NewFiles.Add(cascpath, new CASFile(File.ReadAllBytes(filepath), encoding, compression));
 		}
 
 		public void RenameFile(string path, string newpath)
@@ -261,11 +267,11 @@ namespace CASCEdit.Handlers
 				var entries = root.Entries.Where(x => x.Hash == hash);
 				foreach (var entry in entries)
 				{
-					var blte = CASCContainer.EncodingHandler.Data[entry.MD5].Keys[0];
+					var blte = CASContainer.EncodingHandler.Data[entry.MD5].Keys[0];
 					entry.Hash = newhash;
 					entry.Path = path;
 
-					CASCContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, blte));
+					CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, blte));
 				}
 			}
 		}
@@ -279,14 +285,14 @@ namespace CASCEdit.Handlers
 				var entries = root.Entries.Where(x => x.Hash == hash).ToArray(); // should only ever be one but just incase
 				foreach(var entry in entries)
 				{
-					if (CASCContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
+					if (CASContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
 					{
-						CASCContainer.DownloadHandler?.RemoveEntry(enc.Keys[0]); // remove from download
-						CASCContainer.CDNIndexHandler?.RemoveEntry(enc.Keys[0]); // remove from cdn index
+						CASContainer.DownloadHandler?.RemoveEntry(enc.Keys[0]); // remove from download
+						CASContainer.CDNIndexHandler?.RemoveEntry(enc.Keys[0]); // remove from cdn index
 					}
 
 					root.Entries.Remove(entry);
-					CASCContainer.Settings.Cache?.Remove(path);
+					CASContainer.Settings.Cache?.Remove(path);
 				}
 			}
 		}

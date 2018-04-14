@@ -26,6 +26,6 @@ namespace CASCEdit.Structs
     {
         public string Name;
         public ushort Type;
-        public byte[] BitMask;
+        public BoolArray BitMask;
     }
 }

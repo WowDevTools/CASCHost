@@ -16,8 +16,7 @@ namespace CASCEdit.Structs
         public ushort FlagsB;
         public uint NumEntriesA;
         public uint NumEntriesB;
-        public byte _9;
-        public uint StringBlockSize;
+        public ulong StringBlockSize;
     }
 
     public class EncodingEntry

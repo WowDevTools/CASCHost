@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CASCEdit
 {
-    public class CASCResult
+    public class CASResult
     {
         public MD5Hash Hash;
         public MD5Hash DataHash;

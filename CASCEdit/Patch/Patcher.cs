@@ -25,19 +25,19 @@ namespace CASCEdit.Patch
 
         public static void Run(string host)
         {
-            CASCContainer.OpenInstall();
+            CASContainer.OpenInstall();
             Parallel.ForEach(Files, file => Patch(file, host));
         }
 
         public static void Patch(string file, string host)
         {
-            CASCContainer.Logger.LogInformation($"Patching {Path.GetFileName(file)}");
+            CASContainer.Logger.LogInformation($"Patching {Path.GetFileName(file)}");
 
             BLTEStream stream = OpenFile(file);
             if (stream == null)
                 return;
 
-            string outpath = Path.Combine(CASCContainer.Settings.OutputPath, Path.GetFileName(file));
+            string outpath = Path.Combine(CASContainer.Settings.OutputPath, Path.GetFileName(file));
             using (var fs = new FileStream(outpath, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (var bw = new BinaryWriter(fs))
             {
@@ -68,20 +68,20 @@ namespace CASCEdit.Patch
 
         private static BLTEStream OpenFile(string file)
         {
-            var entry = CASCContainer.InstallHandler.GetEntry(file);
+            var entry = CASContainer.InstallHandler.GetEntry(file);
             if (entry == null)
                 return null;
 
-            if (CASCContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
+            if (CASContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
             {
                 string key = enc.Keys[0].ToString();
-                string outpath = Path.Combine(CASCContainer.Settings.OutputPath, key);
+                string outpath = Path.Combine(CASContainer.Settings.OutputPath, key);
 
                 if (!File.Exists(outpath))
                 {
                     string url = "/data/" + key.Substring(0, 2) + "/" + key.Substring(2, 2) + "/" + key;
                     if (!DataHandler.Download(url, outpath))
-                        CASCContainer.Logger.LogWarning($"Unable to download executable {file}.");
+                        CASContainer.Logger.LogWarning($"Unable to download executable {file}.");
                 }
 
                 return DataHandler.ReadDirect(outpath);

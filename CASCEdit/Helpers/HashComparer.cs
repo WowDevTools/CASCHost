@@ -8,12 +8,12 @@ using CASCEdit.IO;
 
 namespace CASCEdit.Helpers
 {
-    class HashComparer : IComparer<byte[]>, IComparer<CASCResult>, IComparer<IndexEntry>, IComparer<LocalIndexEntry>, IComparer<MD5Hash>, IComparer<string>
+    class HashComparer : IComparer<byte[]>, IComparer<CASResult>, IComparer<IndexEntry>, IComparer<LocalIndexEntry>, IComparer<MD5Hash>, IComparer<string>
     {
         public int Compare(MD5Hash x, MD5Hash y) => Compare(x.Value, y.Value);
         public int Compare(LocalIndexEntry x, LocalIndexEntry y) => Compare(x.Key, y.Key);
         public int Compare(IndexEntry x, IndexEntry y) => Compare(x.Hash.Value, y.Hash.Value);
-        public int Compare(CASCResult x, CASCResult y) => Compare(x.Hash.Value, y.Hash.Value);
+        public int Compare(CASResult x, CASResult y) => Compare(x.Hash.Value, y.Hash.Value);
         public int Compare(string x, string y) => Compare(x.ToByteArray(), y.ToByteArray());
 
         public int Compare(byte[] x, byte[] y)

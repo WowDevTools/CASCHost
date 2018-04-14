@@ -11,68 +11,97 @@ using System.Threading.Tasks;
 
 namespace CASCHost
 {
-    public class Logger : ICASCLog, IDisposable
-    {
-        private const string LOG_FILE = "log.txt";
-        private readonly ILogger _logger;
+	public class Logger : ICASCLog, IDisposable
+	{
+		private const string LOG_FILE = "log.txt";
+		private readonly ILogger _logger;
 		private volatile bool _shouldRun = true;
-        private ConcurrentQueue<string> logEntryQueue = new ConcurrentQueue<string>();
+		private ConcurrentQueue<string> logEntryQueue = new ConcurrentQueue<string>();
 		private Timer timer;
 
-        public Logger(ILogger logger)
-        {
-            _logger = logger;
-            File.Delete(LOG_FILE);
+		public Logger(ILogger logger)
+		{
+			_logger = logger;
+			File.Delete(LOG_FILE);
 			timer = new Timer(DoSave, null, 1000, Timeout.Infinite);
+		}
+
+		public void LogAndThrow(LogType type, string message, params object[] args)
+		{
+			switch (type)
+			{
+				case LogType.Critical:
+					LogCritical(message, args);
+					break;
+				case LogType.Debug:
+					LogDebug(message, args);
+					break;
+				case LogType.Error:
+					LogError(message, args);
+					break;
+				case LogType.Information:
+					LogInformation(message, args);
+					break;
+				default:
+					LogWarning(message, args);
+					break;
+			}
+
+
+			timer.Change(Timeout.Infinite, Timeout.Infinite); // stop the timer
+			if (_shouldRun)
+				DoSave(null); // force a save
+
+			throw new Exception(string.Format(message, args)); // throw the exception
 		}
 
 
 		public void LogCritical(string message, params object[] args)
-        {
-            _logger.LogCritical(message, args);
-            Enqueue("CRIT: " + string.Format(message, args));
-        }
+		{
+			_logger.LogCritical(message, args);
+			Enqueue("CRIT: " + string.Format(message, args));
+		}
 
-        public void LogDebug(string message, params object[] args)
-        {
-            _logger.LogDebug(message, args);
-            Enqueue(string.Format(message, args));
-        }
+		public void LogDebug(string message, params object[] args)
+		{
+			_logger.LogDebug(message, args);
+			Enqueue(string.Format(message, args));
+		}
 
-        public void LogError(string message, params object[] args)
-        {
-            _logger.LogError(message, args);
-            Enqueue("ERR: " + string.Format(message, args));
-        }
+		public void LogError(string message, params object[] args)
+		{
+			_logger.LogError(message, args);
+			Enqueue("ERR: " + string.Format(message, args));
+		}
 
-        public void LogInformation(string message, params object[] args)
-        {
-            _logger.LogInformation(message, args);
-            Enqueue(string.Format(message, args));
-        }
+		public void LogInformation(string message, params object[] args)
+		{
+			_logger.LogInformation(message, args);
+			Enqueue(string.Format(message, args));
+		}
 
-        public void LogConsole(string message, params object[] args)
-        {
-            _logger.LogInformation(message, args);
-        }
+		public void LogConsole(string message, params object[] args)
+		{
+			_logger.LogInformation(message, args);
+		}
 
-        public void LogFile(string message, params object[] args)
-        {
-            Enqueue(string.Format(message, args));
-        }
+		public void LogFile(string message, params object[] args)
+		{
+			Enqueue(string.Format(message, args));
+		}
 
-        public void LogWarning(string message, params object[] args)
-        {
-            _logger.LogWarning(message, args);
-            Enqueue("WARN: " + string.Format(message, args));
-        }
+		public void LogWarning(string message, params object[] args)
+		{
+			_logger.LogWarning(message, args);
+			Enqueue("WARN: " + string.Format(message, args));
+		}
 
 
-        private void Enqueue(string message)
-        {
-            message = $"[{DateTime.Now}] {message}";
-            logEntryQueue.Enqueue(message);        
-        }
+		private void Enqueue(string message)
+		{
+			message = $"[{DateTime.Now}] {message}";
+			logEntryQueue.Enqueue(message);
+		}
 
 		private void DoSave(object obj)
 		{

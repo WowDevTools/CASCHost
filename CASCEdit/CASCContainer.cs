@@ -434,20 +434,29 @@ namespace CASCEdit
 				return true;
 			};
 
-			// batch parallel blte encoding
-			var encoder = new TransformBlock<KeyValuePair<string, CASCFile>, bool>(
-				file => BuildBLTE(file),
-				new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 500 }
-			);
+            if(Settings.StaticMode)
+            {
+                foreach (var file in RootHandler.NewFiles)
+                    BuildBLTE(file);
+            }
+            else
+            {
+                // batch parallel blte encoding
+                var encoder = new TransformBlock<KeyValuePair<string, CASCFile>, bool>(
+                    file => BuildBLTE(file),
+                    new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 500 }
+                );
 
-			var buffer = new BufferBlock<bool>();
-			encoder.LinkTo(buffer);
+                var buffer = new BufferBlock<bool>();
+                encoder.LinkTo(buffer);
 
-			foreach (var file in RootHandler.NewFiles)
-				encoder.Post(file);
+                foreach (var file in RootHandler.NewFiles)
+                    encoder.Post(file);
 
-			encoder.Complete();
-			await encoder.Completion;
+                encoder.Complete();
+                await encoder.Completion;
+            }
+			
 
 			RootHandler.NewFiles.Clear();
 			return entries.ToList();

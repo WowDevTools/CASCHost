@@ -31,7 +31,7 @@ namespace CASCEdit.Handlers
 
 		public InstallHandler(BLTEStream blte)
 		{
-			if (blte.Length != long.Parse(CASContainer.BuildConfig["install-size"][0]))
+			if (CASContainer.BuildConfig["install-size"][0] != null && blte.Length != long.Parse(CASContainer.BuildConfig["install-size"][0]))
 				CASContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Install File is corrupt.");
 
 			BinaryReader stream = new BinaryReader(blte);

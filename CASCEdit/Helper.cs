@@ -8,7 +8,7 @@ namespace CASCEdit
         {
             string path = "";
 
-            if (!CASCContainer.Settings.StaticMode)
+            if (!CASContainer.Settings.StaticMode)
             {
                 return filename;
             }
@@ -31,20 +31,20 @@ namespace CASCEdit
                     break;
             }
 
-            Directory.CreateDirectory(Path.Combine(CASCContainer.Settings.OutputPath, Path.GetDirectoryName(path)));
+            Directory.CreateDirectory(Path.Combine(CASContainer.Settings.OutputPath, Path.GetDirectoryName(path)));
             return path;
         }
 
         public static string FixOutputPath(string path, string type = "", string basepath = "")
         {
-            if (!CASCContainer.Settings.StaticMode)
+            if (!CASContainer.Settings.StaticMode)
             {
                 return path;
             }
 
-            if (Path.GetDirectoryName(path) == CASCContainer.Settings.OutputPath)
+            if (Path.GetDirectoryName(path) == CASContainer.Settings.OutputPath)
             {
-                path = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(Path.GetFileName(path), type, basepath));
+                path = Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(Path.GetFileName(path), type, basepath));
             }
 
             return path;

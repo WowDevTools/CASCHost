@@ -6,17 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="wwwroot\Data\creature\**" />
-    <Compile Remove="wwwroot\Data\DBFilesClient\**" />
-    <Content Remove="wwwroot\Data\creature\**" />
-    <Content Remove="wwwroot\Data\DBFilesClient\**" />
-    <EmbeddedResource Remove="wwwroot\Data\creature\**" />
-    <EmbeddedResource Remove="wwwroot\Data\DBFilesClient\**" />
-    <None Remove="wwwroot\Data\creature\**" />
-    <None Remove="wwwroot\Data\DBFilesClient\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Remove="wwwroot/Data" />
     <Content Remove="wwwroot/Output" />
     <Content Remove="wwwroot\SystemFiles\.build.info" />
@@ -37,12 +26,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="wwwroot\Output\" />
-    <Folder Include="wwwroot\SystemFiles\" />
-  </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\CASCEdit\CASCEdit.csproj" />
   </ItemGroup>

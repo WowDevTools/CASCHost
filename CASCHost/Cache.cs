@@ -27,9 +27,10 @@ namespace CASCHost
 		public bool HasId(uint fileid) => RootFiles.Any(x => x.Value.FileDataId == fileid);
 
 		private IHostingEnvironment env;
-		private string Patchpath => Path.Combine(CASCContainer.Settings.OutputPath, ".patch");
+		private string Patchpath => Path.Combine(CASContainer.Settings.OutputPath, ".patch");
 		private Dictionary<string, CacheEntry> RootFiles;
 		private Queue<string> queries = new Queue<string>();
+		private bool firstrun = true;
 
 
 		public Cache(IHostingEnvironment environment)
@@ -42,6 +43,12 @@ namespace CASCHost
 
 		public void AddOrUpdate(CacheEntry item)
 		{
+			if(firstrun)
+			{
+				Clean();
+				firstrun = false;
+			}
+
 			if (RootFiles == null)
 				Load();
 
@@ -101,10 +108,10 @@ namespace CASCHost
 		public void Clean()
 		{
 			//Delete previous Root and Encoding
-			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data"))))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data")));
-			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data"))))
-				File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data")));
+			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data"))))
+				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data")));
+			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data"))))
+				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data")));
 		}
 
 
@@ -233,7 +240,8 @@ namespace CASCHost
 
 		private const string LOAD_DATA =      "SELECT * FROM `root_entries`;";
 
-		private const string REPLACE_RECORD = "REPLACE INTO `root_entries` (`Path`,`FileDataId`,`Hash`,`MD5`,`PurgeAt`,`BLTE`) VALUES ('{0}', '{1}', '{2}', '{3}', NULL, '{4}'); ";
+		private const string REPLACE_RECORD = "INSERT INTO `root_entries` (`Path`, `FileDataId`, `Hash`, `MD5`, `BLTE`, `PurgeAt`) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', NULL) " +
+                                              "ON DUPLICATE KEY UPDATE `FileDataId` = VALUES(`FileDataId`), `Hash` = VALUES(`Hash`), `MD5` = VALUES(`MD5`), `BLTE` = VALUES(`BLTE`), `PurgeAt` = VALUES(`PurgeAt`);";
 
 		private const string DELETE_RECORD =  "UPDATE `root_entries` SET `PurgeAt` = DATE_ADD(CAST(NOW() AS DATE), INTERVAL 1 WEEK) WHERE `Path` = '{0}'; ";
 

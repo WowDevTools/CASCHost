@@ -14,15 +14,30 @@ namespace CASCEdit.Handlers
 {
 	public class DownloadHandler
 	{
-		private DownloadHeader Header;
-		private List<DownloadEntry> Entries = new List<DownloadEntry>();
-		private List<DownloadTag> Tags = new List<DownloadTag>();
+		public List<DownloadEntry> Entries = new List<DownloadEntry>();
+		public List<DownloadTag> Tags = new List<DownloadTag>();
 
+		private DownloadHeader Header;
 		private int[] endofStageIndex;
 		private EncodingMap[] EncodingMap;
 
+		public DownloadHandler()
+		{
+			Header = new DownloadHeader();
+			EncodingMap = new[]
+			{
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.None, 6),
+				new EncodingMap(EncodingType.ZLib, 9)
+			};
+		}
+
 		public DownloadHandler(BLTEStream blte)
 		{
+
+			if (blte.Length != long.Parse(CASContainer.BuildConfig["download-size"][0]))
+				CASContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Download File is corrupt.");
+
 			using (var br = new BinaryReader(blte))
 			{
 				Header = new DownloadHeader()
@@ -51,7 +66,7 @@ namespace CASCEdit.Handlers
 				}
 
 				// tags
-				int numMaskBytes = ~~((int)Header.NumEntries + 7) / 8;
+				int numMaskBytes = ((int)Header.NumEntries + 7) / 8;
 				for (int i = 0; i < Header.NumTags; i++)
 				{
 					var tag = new DownloadTag()
@@ -76,9 +91,9 @@ namespace CASCEdit.Handlers
 			blte?.Dispose();
 		}
 
-		public void AddEntry(CASCResult blte)
+		public void AddEntry(CASResult blte)
 		{
-			if (CASCContainer.EncodingHandler.Layout.ContainsKey(blte.Hash)) // skip existing
+			if (CASContainer.EncodingHandler.Layout.ContainsKey(blte.Hash)) // skip existing
 				return;
 
 			var entry = new DownloadEntry()
@@ -121,10 +136,10 @@ namespace CASCEdit.Handlers
 			}
 		}
 
-		public CASCResult Write()
+		public CASResult Write()
 		{
 			byte[][] entries = new byte[EncodingMap.Length][];
-			CASCFile[] files = new CASCFile[EncodingMap.Length];
+			CASFile[] files = new CASFile[EncodingMap.Length];
 
 			// header
 			using (var ms = new MemoryStream())
@@ -134,11 +149,11 @@ namespace CASCEdit.Handlers
 				bw.Write(Header.Version);
 				bw.Write(Header.ChecksumSize);
 				bw.Write(Header.Unknown);
-				bw.WriteUInt32BE(Header.NumEntries);
-				bw.WriteUInt16BE(Header.NumTags);
+				bw.WriteUInt32BE((uint)Entries.Count);
+				bw.WriteUInt16BE((ushort)Tags.Count);
 
 				entries[0] = ms.ToArray();
-				files[0] = new CASCFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
+				files[0] = new CASFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
 			}
 
 			// files
@@ -154,7 +169,7 @@ namespace CASCEdit.Handlers
 				}
 
 				entries[1] = ms.ToArray();
-				files[1] = new CASCFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
+				files[1] = new CASFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
 			}
 
 			// tags
@@ -171,21 +186,21 @@ namespace CASCEdit.Handlers
 				}
 
 				entries[2] = ms.ToArray();
-				files[2] = new CASCFile(entries[2], EncodingMap[2].Type, EncodingMap[2].CompressionLevel);
+				files[2] = new CASFile(entries[2], EncodingMap[2].Type, EncodingMap[2].CompressionLevel);
 			}
 
 			// write
-			CASCResult res = DataHandler.Write(WriteMode.CDN, files);
+			CASResult res = DataHandler.Write(WriteMode.CDN, files);
 			using (var md5 = MD5.Create())
 				res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
 
-			File.Delete(Path.Combine(CASCContainer.Settings.OutputPath, CASCContainer.BuildConfig["download"][0]));
+			File.Delete(Path.Combine(CASContainer.Settings.OutputPath, CASContainer.BuildConfig["download"][0]));
 
-			CASCContainer.Logger.LogInformation($"Download: Hash: {res.Hash} Data: {res.DataHash}");
-			CASCContainer.BuildConfig.Set("download-size", res.DecompressedSize.ToString());
-			CASCContainer.BuildConfig.Set("download-size", (res.CompressedSize - 30).ToString(), 1);
-			CASCContainer.BuildConfig.Set("download", res.DataHash.ToString());
-			CASCContainer.BuildConfig.Set("download", res.Hash.ToString(), 1);
+			CASContainer.Logger.LogInformation($"Download: Hash: {res.Hash} Data: {res.DataHash}");
+			CASContainer.BuildConfig.Set("download-size", res.DecompressedSize.ToString());
+			CASContainer.BuildConfig.Set("download-size", (res.CompressedSize - 30).ToString(), 1);
+			CASContainer.BuildConfig.Set("download", res.DataHash.ToString());
+			CASContainer.BuildConfig.Set("download", res.Hash.ToString(), 1);
 
 			Array.Resize(ref entries, 0);
 			Array.Resize(ref files, 0);

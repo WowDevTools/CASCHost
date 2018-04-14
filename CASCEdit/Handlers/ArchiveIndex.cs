@@ -174,15 +174,8 @@ namespace CASCEdit.Handlers
 				//Save file to output
 				string filename = ComputeFilename(bw, md5, posFooterStart);
 
-				var path = Path.Combine(CASCContainer.Settings.OutputPath, filename + ".index");
-
-                if (CASCContainer.Settings.StaticMode)
-                {
-                    path = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(filename + ".index", "data"));
-                    Directory.CreateDirectory(Path.GetDirectoryName(path));
-                }
-
-                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+				var path = Helper.FixOutputPath(Path.Combine(CASContainer.Settings.OutputPath, filename + ".index"));
+				using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
 				{
 					ms.Position = 0;
 					ms.CopyTo(fs);
@@ -190,9 +183,9 @@ namespace CASCEdit.Handlers
 				}
 
 				//Update CDN Config
-				CASCContainer.CDNConfig["archives"].RemoveAll(x => x == Path.GetFileNameWithoutExtension(BaseFile));
-				CASCContainer.CDNConfig["archives"].Add(filename);
-				CASCContainer.CDNConfig["archives"].Sort(new HashComparer());
+				CASContainer.CDNConfig["archives"].RemoveAll(x => x == Path.GetFileNameWithoutExtension(BaseFile));
+				CASContainer.CDNConfig["archives"].Add(filename);
+				CASContainer.CDNConfig["archives"].Sort(new HashComparer());
 
 				return path;
 			}

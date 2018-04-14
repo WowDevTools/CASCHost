@@ -26,7 +26,7 @@ namespace CASCHost
 		private readonly string dataPath;
 		private readonly string outputPath;
 		private ConcurrentDictionary<string, FileSystemEventArgs> changes;
-		private CASCSettings settings;
+		private CASSettings settings;
 		private DateTime lastBuild;
 
 
@@ -142,21 +142,21 @@ namespace CASCHost
 			Stopwatch sw = Stopwatch.StartNew();
 
 			//Open the CASC Container
-			CASCContainer.Open(settings);
-			CASCContainer.OpenCdnIndices(false);
-			CASCContainer.OpenEncoding();
-			CASCContainer.OpenRoot(settings.Locale, Startup.Settings.MinimumFileDataId);
+			CASContainer.Open(settings);
+			CASContainer.OpenCdnIndices(false);
+			CASContainer.OpenEncoding();
+			CASContainer.OpenRoot(settings.Locale, Startup.Settings.MinimumFileDataId);
 
 			if(Startup.Settings.BNetAppSupport) // these are only needed by the bnet app launcher
 			{
-				CASCContainer.OpenDownload();
-				CASCContainer.OpenInstall();
-				CASCContainer.DownloadInstallAssets();
+				CASContainer.OpenDownload();
+				CASContainer.OpenInstall();
+				CASContainer.DownloadInstallAssets();
             }
 
 			//Remove Purged files
 			foreach (var purge in Startup.Cache.ToPurge)
-				CASCContainer.RootHandler.RemoveFile(purge);
+				CASContainer.RootHandler.RemoveFile(purge);
 
 			//Apply file changes
 			while (changes.Count > 0)
@@ -171,23 +171,23 @@ namespace CASCHost
 					switch (change.ChangeType)
 					{
 						case WatcherChangeTypes.Renamed:
-							if (CASCContainer.RootHandler.GetEntry(oldpath) == null)
-								CASCContainer.RootHandler.AddFile(fullpath, cascpath);
+							if (CASContainer.RootHandler.GetEntry(oldpath) == null)
+								CASContainer.RootHandler.AddFile(fullpath, cascpath);
 							else
-								CASCContainer.RootHandler.RenameFile(oldpath, cascpath);
+								CASContainer.RootHandler.RenameFile(oldpath, cascpath);
 							break;
 						case WatcherChangeTypes.Deleted:
-							CASCContainer.RootHandler.RemoveFile(cascpath);
+							CASContainer.RootHandler.RemoveFile(cascpath);
 							break;
 						default:
-							CASCContainer.RootHandler.AddFile(fullpath, cascpath);
+							CASContainer.RootHandler.AddFile(fullpath, cascpath);
 							break;
 					}
 				}
 			}
 
 			//Save and Clean
-			CASCContainer.Save();
+			CASContainer.Save();
 
 			//Update directory hashes
 			Startup.Settings.DirectoryHash = new[]
@@ -265,7 +265,7 @@ namespace CASCHost
 
 			Startup.Logger.LogConsole($"Default Locale set to {locale}.");
 
-			settings = new CASCSettings()
+			settings = new CASSettings()
 			{
 				Host = Startup.Settings.HostDomain,
 				BasePath = _env.WebRootPath,

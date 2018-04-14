@@ -173,11 +173,11 @@ namespace CASCEdit.Handlers
 
                 //Save file to output
                 string filename = ComputeFilename(bw, md5, posFooterStart);
-                var path = Path.Combine(CASCContainer.Settings.OutputPath, filename + ".index");
+                var path = Path.Combine(CASContainer.Settings.OutputPath, filename + ".index");
 
-                if (CASCContainer.Settings.StaticMode)
+                if (CASContainer.Settings.StaticMode)
                 {
-                    path = Path.Combine(CASCContainer.Settings.OutputPath, Helper.GetCDNPath(filename + ".index", "data"));
+                    path = Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(filename + ".index", "data"));
                     Directory.CreateDirectory(Path.GetDirectoryName(path));
                 }
 
@@ -189,7 +189,7 @@ namespace CASCEdit.Handlers
                 }
 
                 //Update CDN Config
-                CASCContainer.CDNConfig.Set("archive-group", filename);
+                CASContainer.CDNConfig.Set("archive-group", filename);
                 return filename;
             }
         }

@@ -18,9 +18,9 @@ using System.Threading.Tasks.Dataflow;
 
 namespace CASCEdit
 {
-    public static class CASCContainer
+    public static class CASContainer
     {
-        public static CASCSettings Settings { get; private set; }
+        public static CASSettings Settings { get; private set; }
         public static string BasePath => Settings.BasePath;
         public static ICASCLog Logger => Settings.Logger;
 
@@ -37,7 +37,7 @@ namespace CASCEdit
         public static DownloadHandler DownloadHandler { get; private set; }
         public static InstallHandler InstallHandler { get; private set; }
 
-        public static void Open(CASCSettings settings)
+        public static void Open(CASSettings settings)
         {
             Settings = settings;
             Settings.Format();
@@ -333,11 +333,11 @@ namespace CASCEdit
 		{
 			Settings.Cache?.Clean();
 
-			//Patch exe
-			//Patcher.Run("http://" + CASCContainer.Settings.Host);
+            //Patch exe
+            //Patcher.Run("http://" + CASContainer.Settings.Host);
 
-			// Entries
-			var entries = SaveEntries().Result;
+            // Entries
+            var entries = SaveEntries().Result;
 
 			// CDN Archives
 			Settings.Logger.LogInformation("Starting CDN Index.");
@@ -418,13 +418,13 @@ namespace CASCEdit
 			Close();
 		}
 
-		private async static Task<List<CASCResult>> SaveEntries()
+		private async static Task<List<CASResult>> SaveEntries()
 		{
 			// generate BLTE encoded files
-			ConcurrentBag<CASCResult> entries = new ConcurrentBag<CASCResult>();
-			Func<KeyValuePair<string, CASCFile>, bool> BuildBLTE = (file) =>
+			ConcurrentBag<CASResult> entries = new ConcurrentBag<CASResult>();
+			Func<KeyValuePair<string, CASFile>, bool> BuildBLTE = (file) =>
 			{
-				CASCResult res = DataHandler.Write(WriteMode.CDN, file.Value);
+				CASResult res = DataHandler.Write(WriteMode.CDN, file.Value);
 				res.DataHash = file.Value.DataHash;
 				res.Path = file.Key;
 				//res.HighPriority - unneeded really
@@ -442,7 +442,7 @@ namespace CASCEdit
             else
             {
                 // batch parallel blte encoding
-                var encoder = new TransformBlock<KeyValuePair<string, CASCFile>, bool>(
+                var encoder = new TransformBlock<KeyValuePair<string, CASFile>, bool>(
                     file => BuildBLTE(file),
                     new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 500 }
                 );
@@ -456,7 +456,7 @@ namespace CASCEdit
                 encoder.Complete();
                 await encoder.Completion;
             }
-			
+
 
 			RootHandler.NewFiles.Clear();
 			return entries.ToList();

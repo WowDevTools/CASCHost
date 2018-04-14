@@ -35,7 +35,7 @@ namespace CASCEdit.Handlers
 		public DownloadHandler(BLTEStream blte)
 		{
 
-			if (blte.Length != long.Parse(CASContainer.BuildConfig["download-size"][0]))
+			if (CASContainer.BuildConfig["download-size"][0] != null && blte.Length != long.Parse(CASContainer.BuildConfig["download-size"][0]))
 				CASContainer.Settings?.Logger.LogAndThrow(Logging.LogType.Critical, "Download File is corrupt.");
 
 			using (var br = new BinaryReader(blte))

@@ -6,11 +6,7 @@ namespace CASCExtractor
 {
     class Program
     {
-#if DEBUG
-        static readonly string BASEPATH = @"D:\World of Warcraft";
-#else
         static readonly string BASEPATH = AppContext.BaseDirectory;
-#endif
 
         static void Main(string[] args)
         {

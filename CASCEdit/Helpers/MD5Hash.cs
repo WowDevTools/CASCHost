@@ -45,10 +45,8 @@ namespace CASCEdit.Helpers
             return new HashComparer().Compare(this, (MD5Hash)obj) == 0;
         }
 
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
-        }
+        public override int GetHashCode() => Value.GetHashCode();
+        
         #endregion
 
     }

@@ -52,7 +52,7 @@ namespace CASCEdit.Patch
                 foreach (var patch in patches)
                 {
                     long offset = SearchPattern(content, patch.Key);
-                    if (offset > 0)
+                    if (offset >= 0)
                     {
                         fs.Position = offset;
                         bw.Write(patch.Value);

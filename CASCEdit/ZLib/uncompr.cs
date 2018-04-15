@@ -28,15 +28,16 @@ namespace CASCEdit.ZLib
         // enough memory, Z_BUF_ERROR if there was not enough room in the output
         // buffer, or Z_DATA_ERROR if the input data was corrupted.
 
-        public static int uncompress(byte[] dest, ref uint destLen, byte[] source, uint sourceLen, uint sourceOffset = 0, uint destOffset = 0)
+        public static int Uncompress(byte[] dest, ref uint destLen, byte[] source, uint sourceLen, uint sourceOffset = 0, uint destOffset = 0)
         {
-            z_stream stream = new z_stream();
-
-            stream.in_buf = source;
-            stream.next_in = sourceOffset;
-            stream.avail_in = sourceLen;
-            // Check for source > 64K on 16-bit machine:
-            if (stream.avail_in != sourceLen) return Z_BUF_ERROR;
+			z_stream stream = new z_stream
+			{
+				in_buf = source,
+				next_in = sourceOffset,
+				avail_in = sourceLen
+			};
+			// Check for source > 64K on 16-bit machine:
+			if (stream.avail_in != sourceLen) return Z_BUF_ERROR;
 
             stream.out_buf = dest;
             stream.next_out = (int)destOffset;

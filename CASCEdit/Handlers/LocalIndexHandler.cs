@@ -147,12 +147,12 @@ namespace CASCEdit.Handlers
                     bw.BaseStream.Position = 8;
                     byte[] headerhash = new byte[index.HeaderHashSize];
                     bw.BaseStream.Read(headerhash, 0, headerhash.Length);
-                    hasher.Reset();
-                    hasher.ComputeHash(headerhash, out pC);
+
+                    hasher.ComputeHash(headerhash, out pC, true);
                     bw.BaseStream.Position = 4;
                     bw.Write(pC);
 
-                    // file length constraint
+                    // minimum file length constraint
                     if (bw.BaseStream.Length < CHUNK_SIZE)
                         bw.BaseStream.SetLength(CHUNK_SIZE);
 

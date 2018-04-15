@@ -13,10 +13,8 @@ namespace CASCEdit.Structs
     {
         All = 0xFFFFFFFF,
         None = 0,
-        //Unk_1 = 0x1,
         enUS = 0x2,
         koKR = 0x4,
-        //Unk_8 = 0x8,
         frFR = 0x10,
         deDE = 0x20,
         zhCN = 0x40,

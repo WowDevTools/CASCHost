@@ -422,19 +422,20 @@ namespace CASCEdit
 		{
 			// generate BLTE encoded files
 			ConcurrentBag<CASResult> entries = new ConcurrentBag<CASResult>();
-			Func<KeyValuePair<string, CASFile>, bool> BuildBLTE = (file) =>
+
+			bool BuildBLTE(KeyValuePair<string, CASFile> file)
 			{
 				CASResult res = DataHandler.Write(WriteMode.CDN, file.Value);
 				res.DataHash = file.Value.DataHash;
 				res.Path = file.Key;
-				//res.HighPriority - unneeded really
+				//res.HighPriority // only used by download handler
 				entries.Add(res);
 
 				Logger.LogInformation($"{Path.GetFileName(res.Path)}: Hash: {res.Hash} Data: {res.DataHash}");
 				return true;
-			};
+			}
 
-            if(Settings.StaticMode)
+			if (Settings.StaticMode)
             {
                 foreach (var file in RootHandler.NewFiles)
                     BuildBLTE(file);

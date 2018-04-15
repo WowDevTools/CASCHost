@@ -122,20 +122,27 @@ namespace CASCHost
 			using (MySqlConnection connection = new MySqlConnection(Startup.Settings.SqlConnection))
 			using (MySqlCommand command = new MySqlCommand())
 			{
-				connection.Open();
-				command.Connection = connection;
+				try
+				{
+					connection.Open();
+					command.Connection = connection;
 
-				// create data table
-				command.CommandText = CREATE_DATA_TABLE;
-				command.ExecuteNonQuery();
+					// create data table
+					command.CommandText = CREATE_DATA_TABLE;
+					command.ExecuteNonQuery();
 
-				// load data
-				command.CommandText = LOAD_DATA;
-				ReadAll(command.ExecuteReader());
+					// load data
+					command.CommandText = LOAD_DATA;
+					ReadAll(command.ExecuteReader());
 
-				// purge old data
-				command.CommandText = PURGE_RECORDS;
-				command.ExecuteNonQuery();
+					// purge old data
+					command.CommandText = PURGE_RECORDS;
+					command.ExecuteNonQuery();
+				}
+				catch(MySqlException)
+				{
+					Startup.Logger?.LogAndThrow(CASCEdit.Logging.LogType.Critical, "Unable to connect to the database.");
+				}
 			}
 		}
 
@@ -156,7 +163,7 @@ namespace CASCHost
 						BLTE = new MD5Hash(reader.GetFieldValue<string>(5).ToByteArray())
 					};
 
-					//Keep files that still exist or are special and not flagged to be deleted
+					// keep files that still exist or are special and not flagged to be deleted
 					bool keep = File.Exists(Path.Combine(env.WebRootPath, "Data", entry.Path)) && reader.IsDBNull(6);
 					if (keep || entry.FileDataId == 0)
 					{

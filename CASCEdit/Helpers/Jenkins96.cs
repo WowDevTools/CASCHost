@@ -9,7 +9,10 @@ namespace CASCEdit.Helpers
 {
     class Jenkins96 : HashAlgorithm
     {
-        private ulong hashValue;
+		// Original Implementation by TOM_RUS in CASCExplorer
+		// Original Source : https://github.com/WoW-Tools/CASCExplorer/blob/master/CascLib/Jenkins96.cs
+
+		private ulong hashValue;
 
         public byte[] ResultValue => BitConverter.GetBytes(hashValue);
         public ulong Result => hashValue;
@@ -26,25 +29,23 @@ namespace CASCEdit.Helpers
             return hashValue;
         }
 
-        public ulong ComputeHash(byte[] data, out uint pC)
+        public ulong ComputeHash(byte[] data, out uint pC, bool reset = false)
         {
-            ComputeHash(data);
+			if (reset)
+				pC = pB = 0;
+
+			ComputeHash(data);
             pC = this.pC;
             return hashValue;
-        }
-
-        public void Reset()
-        {
-            pC = pB = 0;
         }
 
         public override void Initialize() { }
 
         protected override unsafe void HashCore(byte[] array, int ibStart, int cbSize)
         {
-            Func<uint, int, uint> rot = (x, k) => (x << k) | (x >> (32 - k));
+			uint rot(uint x, int k) => (x << k) | (x >> (32 - k));
 
-            uint length = (uint)array.Length;
+			uint length = (uint)array.Length;
             uint a, b, c;
             a = b = c = 0xdeadbeef + (length) + pC;
             c += pB;

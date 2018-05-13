@@ -50,17 +50,31 @@ namespace CASCEdit.Handlers
 					NumTags = br.ReadUInt16BE(),
 				};
 
+				if (Header.Version >= 3) {
+					throw new NotImplementedException("Download file versions newer than 2 are not supported.");
+				}
+
+				if (Header.Version >= 2) {
+					Header.NumFlags = br.ReadByte();
+				}
+
 				// entries
 				for (int i = 0; i < Header.NumEntries; i++)
 				{
 					var entry = new DownloadEntry()
 					{
-						Unknown = Header.Version > 1 ? br.ReadByte() : (byte)0, // new V2 field
 						Hash = new MD5Hash(br),
 						FileSize = br.ReadUInt40BE(),
-						Stage = br.ReadByte(),
-						UnknownData = br.ReadBytes(4)
+						Stage = br.ReadByte()
 					};
+
+					if (Header.Unknown != 0) {
+						entry.Unknown = br.ReadUInt32BE();
+					}
+
+					if (Header.Version >= 2) {
+						entry.Flags = br.ReadBytes(Header.NumFlags);
+					}
 
 					Entries.Add(entry);
 				}
@@ -100,7 +114,7 @@ namespace CASCEdit.Handlers
 			{
 				Hash = blte.Hash,
 				FileSize = blte.CompressedSize - 30,
-				UnknownData = new byte[4],
+				Flags = new byte[Header.NumFlags],
 				Stage = (byte)(blte.HighPriority ? 0 : 1)
 			};
 
@@ -152,6 +166,10 @@ namespace CASCEdit.Handlers
 				bw.WriteUInt32BE((uint)Entries.Count);
 				bw.WriteUInt16BE((ushort)Tags.Count);
 
+				if (Header.Version >= 2) {
+					bw.Write(Header.NumFlags);
+				}
+
 				entries[0] = ms.ToArray();
 				files[0] = new CASFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
 			}
@@ -165,7 +183,14 @@ namespace CASCEdit.Handlers
 					bw.Write(entry.Hash.Value);
 					bw.WriteUInt40BE(entry.FileSize);
 					bw.Write(entry.Stage);
-					bw.Write(entry.UnknownData);
+
+					if (Header.Unknown != 0) {
+						bw.WriteUInt32BE(entry.Unknown);
+					}
+
+					if (Header.Version >= 2) {
+						bw.Write(entry.Flags);
+					}
 				}
 
 				entries[1] = ms.ToArray();

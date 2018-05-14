@@ -78,10 +78,10 @@ namespace CASCEdit.Handlers
 			blte?.Dispose();
 		}
 
-		public void Write(List<CASResult> newentries)
+		public CASResult Write(List<CASResult> newentries)
 		{
 			if (!NeedsWrite(newentries))
-				return;
+				return null;
 
 			byte[][] entries = new byte[EncodingMap.Length][];
 			CASFile[] files = new CASFile[EncodingMap.Length];
@@ -139,6 +139,8 @@ namespace CASCEdit.Handlers
 
 			Array.Resize(ref entries, 0);
 			Array.Resize(ref files, 0);
+
+			return res;
 		}
 
 		private bool NeedsWrite(List<CASResult> entries)

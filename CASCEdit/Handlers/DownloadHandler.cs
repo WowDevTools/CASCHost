@@ -76,6 +76,11 @@ namespace CASCEdit.Handlers
 						BitMask = new BoolArray(br.ReadBytes(numMaskBytes))
 					};
 
+					// We need to remove trailing bits from the padded byte array.
+					while (tag.BitMask.Count != Entries.Count) {
+						tag.BitMask.RemoveAt(tag.BitMask.Count - 1);
+					}
+
 					Tags.Add(tag);
 				}
 

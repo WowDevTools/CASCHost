@@ -112,22 +112,21 @@ namespace CASCEdit.Handlers
 			int index = endofStageIndex[entry.Stage];
 			if (index >= 0)
 			{
-				if (entry.Stage == 0) endofStageIndex[0]++;
-				endofStageIndex[1]++;
+				endofStageIndex[entry.Stage]++;
 
 				Entries.Insert(index, entry);
 
-				foreach (var tag in Tags)
-					if (tag.Name != "Alternate")
-						tag.BitMask.Insert(index, true);
+				foreach (var tag in Tags) {
+					tag.BitMask.Insert(index, tag.Name != "Alternate");
+				}
 			}
 			else
 			{
 				Entries.Add(entry);
 
-				foreach (var tag in Tags)
-					if (tag.Name != "Alternate")
-						tag.BitMask.Add(true);
+				foreach (var tag in Tags) {
+					tag.BitMask.Add(tag.Name != "Alternate");
+				}
 			}
 		}
 

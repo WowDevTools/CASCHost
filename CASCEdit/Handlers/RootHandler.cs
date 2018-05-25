@@ -111,57 +111,40 @@ namespace CASCEdit.Handlers
 
 		public void AddEntry(string path, CASResult file)
 		{
+			var cache = CASContainer.Settings.Cache;
+
 			ulong hash = new Jenkins96().ComputeHash(path);
-			bool found = false;
 
-			// check to see if we're overwriting an existing entry
-			foreach (var root in Chunks)
-			{
-				if (!root.LocaleFlags.HasFlag(locale) && root != GlobalRoot) // skip incorrect locales and non-global roots
-					continue;
+			var entries = Chunks
+						.FindAll(chunk => chunk.LocaleFlags.HasFlag(locale)) // Select locales that match selected locale
+						.SelectMany(chunk => chunk.Entries) // Flatten the array to get all entries within all matching chunks
+						.Where(e => e.Hash == hash);
+						
+			if (entries.Count() == 0) { // New file, we need to create an entry for it
+				var cached = cache.Entries.FirstOrDefault(x => x.Path == path);
+				var fileDataId = Math.Max(maxId + 1, minimumId);
 
-				var index = root.Entries.FindIndex(x => x.Hash == hash);
-				if (index >= 0)
-				{
-					RootEntry entry = new RootEntry()
-					{
-						MD5 = file.DataHash,
-						Hash = hash,
-						Path = path,
-						FileDataId = root.Entries[index].FileDataId,
-						FileDataIdOffset = root.Entries[index].FileDataIdOffset
-					};
-
-					root.Entries[index] = entry; // update
-					found = true;
-
-					// max id check just to be safe
-					if (root == GlobalRoot)
-						maxId = Math.Max(entry.FileDataId, maxId); // update max id				
-
-					CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
+				if (cached != null) {
+					fileDataId = cached.FileDataId;
 				}
-			}
 
-			// must be a new file, add it to the global root
-			if (!found)
-			{
-				RootEntry entry = new RootEntry()
-				{
+				var entry = new RootEntry() {
 					MD5 = file.DataHash,
+					FileDataId = fileDataId,
 					FileDataIdOffset = 0,
 					Hash = hash,
 					Path = path
 				};
 
-				var cache = CASContainer.Settings.Cache.Entries.FirstOrDefault(x => x.Path == path);
-				if (cache?.Path != path) // get cache id
-					entry.FileDataId = Math.Max(maxId + 1, minimumId); // calculate the Id 
+				GlobalRoot.Entries.Add(entry); // Insert into the Global Root
+				maxId = Math.Max(entry.FileDataId, maxId); // Update the max id
+			} else { // Existing file, we just have to update the data hash
+				foreach (var entry in entries) {
+					entry.MD5 = file.DataHash;
+					entry.Path = path;
 
-				GlobalRoot.Entries.Add(entry); // add new
-
-				maxId = Math.Max(entry.FileDataId, maxId); // Update max id
-				CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
+					cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
+				}
 			}
 		}
 

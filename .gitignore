@@ -254,3 +254,6 @@ paket-files/
 [Tt]ools/
 /Adding a new Model.docx
 /Quickstart Guide.docx
+
+# Visual Studio Code
+.vscode

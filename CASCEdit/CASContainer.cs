@@ -199,13 +199,13 @@ namespace CASCEdit
             Logger.LogInformation("Loading Root...");
 
             var rootkey = BuildConfig.GetKey("root");
-            if (!EncodingHandler.CEKeys.TryGetValue(rootkey, out EncodingEntry enc))
+            if (!EncodingHandler.CEKeys.TryGetValue(rootkey, out EncodingCEKeyPageTable enc))
             {
                 Logger.LogCritical($"Encoding missing Root {rootkey.ToString()}");
                 return;
             }
 
-            LocalIndexEntry idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
+            LocalIndexEntry idxInfo = LocalIndexHandler?.GetIndexInfo(enc.EKeys[0]);
             if (idxInfo != null)
             {
                 var path = Path.Combine(BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
@@ -213,7 +213,7 @@ namespace CASCEdit
             }
             else
             {
-                string key = enc.Keys[0].ToString();
+                string key = enc.EKeys[0].ToString();
                 string path = Path.Combine(Settings.SystemFilesPath, key);
                 path = Helper.FixOutputPath(path, "data");
 
@@ -233,13 +233,13 @@ namespace CASCEdit
             Logger.LogInformation("Loading Download...");
 
             var downloadkey = BuildConfig.GetKey("download");
-            if (!EncodingHandler.CEKeys.TryGetValue(downloadkey, out EncodingEntry enc))
+            if (!EncodingHandler.CEKeys.TryGetValue(downloadkey, out EncodingCEKeyPageTable enc))
             {
                 Logger.LogCritical($"Encoding missing Download {downloadkey.ToString()}");
                 return;
             }
 
-            LocalIndexEntry idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
+            LocalIndexEntry idxInfo = LocalIndexHandler?.GetIndexInfo(enc.EKeys[0]);
             if (idxInfo != null)
             {
                 var path = Path.Combine(BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
@@ -247,7 +247,7 @@ namespace CASCEdit
             }
             else
             {
-                string key = enc.Keys[0].ToString();
+                string key = enc.EKeys[0].ToString();
                 string path = Path.Combine(Settings.SystemFilesPath, key);
                 path = Helper.FixOutputPath(path, "data");
 
@@ -267,13 +267,13 @@ namespace CASCEdit
             Logger.LogInformation("Loading Install...");
 
             var installkey = BuildConfig.GetKey("install");
-            if (!EncodingHandler.CEKeys.TryGetValue(installkey, out EncodingEntry enc))
+            if (!EncodingHandler.CEKeys.TryGetValue(installkey, out EncodingCEKeyPageTable enc))
             {
                 Logger.LogCritical($"Encoding missing Install {installkey.ToString()}");
                 return;
             }
 
-            LocalIndexEntry idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
+            LocalIndexEntry idxInfo = LocalIndexHandler?.GetIndexInfo(enc.EKeys[0]);
             if (idxInfo != null)
             {
                 var path = Path.Combine(BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
@@ -281,7 +281,7 @@ namespace CASCEdit
             }
             else
             {
-                string key = enc.Keys[0].ToString();
+                string key = enc.EKeys[0].ToString();
                 string path = Path.Combine(Settings.SystemFilesPath, key);
                 path = Helper.FixOutputPath(path, "data");
 
@@ -529,13 +529,13 @@ namespace CASCEdit
 
             // Root File
             var rootkey = BuildConfig.GetKey("root");
-            if (EncodingHandler.CEKeys.TryGetValue(rootkey, out EncodingEntry enc))
+            if (EncodingHandler.CEKeys.TryGetValue(rootkey, out EncodingCEKeyPageTable enc))
             {
-                idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
+                idxInfo = LocalIndexHandler?.GetIndexInfo(enc.EKeys[0]);
                 if (idxInfo != null)
                 {
                     path = Path.Combine(BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
-                    DataHandler.Extract(path, Path.Combine(savepath, enc.Keys[0].ToString()), idxInfo);
+                    DataHandler.Extract(path, Path.Combine(savepath, enc.EKeys[0].ToString()), idxInfo);
                 }
                 else
                 {
@@ -548,11 +548,11 @@ namespace CASCEdit
             var installkey = BuildConfig.GetKey("install");
             if (EncodingHandler.CEKeys.TryGetValue(installkey, out enc))
             {
-                idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
+                idxInfo = LocalIndexHandler?.GetIndexInfo(enc.EKeys[0]);
                 if (idxInfo != null)
                 {
                     path = Path.Combine(BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
-                    DataHandler.Extract(path, Path.Combine(savepath, enc.Keys[0].ToString()), idxInfo);
+                    DataHandler.Extract(path, Path.Combine(savepath, enc.EKeys[0].ToString()), idxInfo);
                 }
                 else
                 {
@@ -565,11 +565,11 @@ namespace CASCEdit
             var downloadkey = BuildConfig.GetKey("download");
             if (EncodingHandler.CEKeys.TryGetValue(downloadkey, out enc))
             {
-                idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
+                idxInfo = LocalIndexHandler?.GetIndexInfo(enc.EKeys[0]);
                 if (idxInfo != null)
                 {
                     path = Path.Combine(BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
-                    DataHandler.Extract(path, Path.Combine(savepath, enc.Keys[0].ToString()), idxInfo);
+                    DataHandler.Extract(path, Path.Combine(savepath, enc.EKeys[0].ToString()), idxInfo);
                 }
                 else
                 {

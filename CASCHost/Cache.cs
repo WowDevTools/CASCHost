@@ -139,8 +139,9 @@ namespace CASCHost
 					command.CommandText = PURGE_RECORDS;
 					command.ExecuteNonQuery();
 				}
-				catch(MySqlException)
+				catch(MySqlException ex)
 				{
+					Startup.Logger?.LogFile(ex.Message);
 					Startup.Logger?.LogAndThrow(CASCEdit.Logging.LogType.Critical, "Unable to connect to the database.");
 				}
 			}

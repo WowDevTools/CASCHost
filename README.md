@@ -70,7 +70,7 @@ The patched executable doesn't have to be put into an existing WoW installation 
 
 #### FAQ: ####
 What versions are supported?
-- Everything WoD+ (although this has only been tested on Legion and BfA).
+- Everything WoD+.
 
 It was working now its all broken - what do?
 - Delete the `Output` folder and restart CASCHost this will resolve 99% of all issues. Failing that, jump on Discord.

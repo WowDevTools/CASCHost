@@ -15,15 +15,16 @@ namespace CASCEdit.Structs
         public byte Unknown = 1;
         public uint NumEntries;
         public ushort NumTags;
+        public byte NumFlags = 0; // V2 only
     }
 
     public class DownloadEntry
     {
-		public byte Unknown; // v2 only
         public MD5Hash Hash;
         public ulong FileSize;
         public byte Stage;
-        public byte[] UnknownData;
+	    public UInt32 Unknown;
+        public byte[] Flags; // V2 only
     }
 
     public class DownloadTag

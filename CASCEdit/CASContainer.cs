@@ -199,7 +199,7 @@ namespace CASCEdit
             Logger.LogInformation("Loading Root...");
 
             var rootkey = BuildConfig.GetKey("root");
-            if (!EncodingHandler.Data.TryGetValue(rootkey, out EncodingEntry enc))
+            if (!EncodingHandler.CEKeys.TryGetValue(rootkey, out EncodingEntry enc))
             {
                 Logger.LogCritical($"Encoding missing Root {rootkey.ToString()}");
                 return;
@@ -233,7 +233,7 @@ namespace CASCEdit
             Logger.LogInformation("Loading Download...");
 
             var downloadkey = BuildConfig.GetKey("download");
-            if (!EncodingHandler.Data.TryGetValue(downloadkey, out EncodingEntry enc))
+            if (!EncodingHandler.CEKeys.TryGetValue(downloadkey, out EncodingEntry enc))
             {
                 Logger.LogCritical($"Encoding missing Download {downloadkey.ToString()}");
                 return;
@@ -267,7 +267,7 @@ namespace CASCEdit
             Logger.LogInformation("Loading Install...");
 
             var installkey = BuildConfig.GetKey("install");
-            if (!EncodingHandler.Data.TryGetValue(installkey, out EncodingEntry enc))
+            if (!EncodingHandler.CEKeys.TryGetValue(installkey, out EncodingEntry enc))
             {
                 Logger.LogCritical($"Encoding missing Install {installkey.ToString()}");
                 return;
@@ -529,7 +529,7 @@ namespace CASCEdit
 
             // Root File
             var rootkey = BuildConfig.GetKey("root");
-            if (EncodingHandler.Data.TryGetValue(rootkey, out EncodingEntry enc))
+            if (EncodingHandler.CEKeys.TryGetValue(rootkey, out EncodingEntry enc))
             {
                 idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
                 if (idxInfo != null)
@@ -546,7 +546,7 @@ namespace CASCEdit
 
             // Install File
             var installkey = BuildConfig.GetKey("install");
-            if (EncodingHandler.Data.TryGetValue(installkey, out enc))
+            if (EncodingHandler.CEKeys.TryGetValue(installkey, out enc))
             {
                 idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
                 if (idxInfo != null)
@@ -563,7 +563,7 @@ namespace CASCEdit
 
             // Download File
             var downloadkey = BuildConfig.GetKey("download");
-            if (EncodingHandler.Data.TryGetValue(downloadkey, out enc))
+            if (EncodingHandler.CEKeys.TryGetValue(downloadkey, out enc))
             {
                 idxInfo = LocalIndexHandler?.GetIndexInfo(enc.Keys[0]);
                 if (idxInfo != null)

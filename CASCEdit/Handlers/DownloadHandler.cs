@@ -112,7 +112,7 @@ namespace CASCEdit.Handlers
 
 		public void AddEntry(CASResult blte)
 		{
-			if (CASContainer.EncodingHandler.Layout.ContainsKey(blte.Hash)) // skip existing
+			if (CASContainer.EncodingHandler.EKeys.ContainsKey(blte.Hash)) // skip existing
 				return;
 
 			var entry = new DownloadEntry()

@@ -12,16 +12,18 @@ using CASCEdit.IO;
 
 namespace CASCEdit.Handlers
 {
-
-    public class EncodingHandler : IDisposable
+	using CEKeyPageTable = SortedList<MD5Hash, EncodingCEKeyPageTable>;
+	using EKeyPageTable = SortedList<MD5Hash, EncodingEKeyPageTable>;
+	
+	public class EncodingHandler : IDisposable
     {
         private const int CHUNK_SIZE = 4096;
         private EncodingMap[] EncodingMap;
 
         public EncodingHeader Header;
-        public List<string> LayoutStringTable = new List<string>();
-        public SortedList<MD5Hash, EncodingEntry> Data = new SortedList<MD5Hash, EncodingEntry>(new HashComparer());
-        public SortedList<MD5Hash, EncodingLayout> Layout = new SortedList<MD5Hash, EncodingLayout>(new HashComparer());
+        public List<string> ESpecStringTable = new List<string>();
+        public CEKeyPageTable CEKeys = new CEKeyPageTable(new HashComparer());
+        public EKeyPageTable EKeys = new EKeyPageTable(new HashComparer());
 
 		public EncodingHandler()
 		{
@@ -49,71 +51,73 @@ namespace CASCEdit.Handlers
             {
                 Magic = stream.ReadBytes(2),
                 Version = stream.ReadByte(),
-                ChecksumSizeA = stream.ReadByte(),
-                ChecksumSizeB = stream.ReadByte(),
-                FlagsA = stream.ReadUInt16(),
-                FlagsB = stream.ReadUInt16(),
-                NumEntriesA = stream.ReadUInt32BE(),
-                NumEntriesB = stream.ReadUInt32BE(),
-                StringBlockSize = stream.ReadUInt40BE()
+                ChecksumSizeC = stream.ReadByte(),
+                ChecksumSizeE = stream.ReadByte(),
+                PageSizeCEKey = stream.ReadUInt16(),
+                PageSizeEKey = stream.ReadUInt16(),
+                PageCountCEKey = stream.ReadUInt32BE(),
+                PageCountEKey = stream.ReadUInt32BE(),
+				Unknown_x11 = stream.ReadByte(),
+                ESpecBlockSize = stream.ReadUInt32BE()
             };
 
-			// stringTableA
-			LayoutStringTable.AddRange(Encoding.ASCII.GetString(stream.ReadBytes((int)Header.StringBlockSize)).Split('\0'));
+			// ESpec string table
+			ESpecStringTable.AddRange(Encoding.ASCII.GetString(stream.ReadBytes((int)Header.ESpecBlockSize)).Split('\0'));
 
-			// skip header block A
-			stream.ReadBytes((int)Header.NumEntriesA * 32); 
+			// skip CE page table lookup
+			stream.ReadBytes((int)Header.PageCountCEKey * 32); 
 
-			// encoding table entry block
-            for (int i = 0; i < Header.NumEntriesA; i++)
+			// read CE page table data
+            for (int i = 0; i < Header.PageCountCEKey; i++)
             {
                 long start = stream.BaseStream.Position;
 
                 ushort keysCount;
                 while ((keysCount = stream.ReadUInt16()) != 0)
                 {
-                    EncodingEntry entry = new EncodingEntry()
+					var entry = new EncodingCEKeyPageTable()
                     {
                         DecompressedSize = stream.ReadUInt32BE(),
-                        Hash = new MD5Hash(stream)
+                        CKey = new MD5Hash(stream)
                     };
 
                     for (int ki = 0; ki < keysCount; ki++)
-                        entry.Keys.Add(new MD5Hash(stream));
+                        entry.EKeys.Add(new MD5Hash(stream));
 
-                    Data.Add(entry.Hash, entry);
+                    CEKeys.Add(entry.CKey, entry);
                 }
 
                 if (stream.BaseStream.Position % CHUNK_SIZE != 0)
                     stream.BaseStream.Position += CHUNK_SIZE - ((stream.BaseStream.Position - start) % CHUNK_SIZE);
             }
 
-			// skip header block B
-			stream.ReadBytes((int)Header.NumEntriesB * 32); 
+			// skip EKey page table lookup
+			stream.ReadBytes((int)Header.PageCountEKey * 32);
 
-			// layout table entry block
-			for (int i = 0; i < Header.NumEntriesB; i++)
+			// read EKey page table data
+			for (int i = 0; i < Header.PageCountEKey; i++)
             {
                 long start = stream.BaseStream.Position;
 
                 MD5Hash hash;
                 while (!(hash = new MD5Hash(stream)).IsEmpty)
                 {
-                    var entry = new EncodingLayout()
+                    var entry = new EncodingEKeyPageTable()
                     {
-                        Hash = hash,
-                        StringIndex = stream.ReadUInt32BE(),
-                        Size = stream.ReadUInt40BE()
+                        EKey = hash,
+                        ESpecStringIndex = stream.ReadUInt32BE(),
+                        FileSize = stream.ReadUInt40BE()
                     };
 
-                    Layout.Add(entry.Hash, entry);
+                    EKeys.Add(entry.EKey, entry);
                 }
 
                 if (stream.BaseStream.Position % CHUNK_SIZE != 0)
                     stream.BaseStream.Position += CHUNK_SIZE - ((stream.BaseStream.Position - start) % CHUNK_SIZE);
             }
 
-            stream.ReadBytes((int)(stream.BaseStream.Length - stream.BaseStream.Position)); //EncodingStringTable
+			// Encoding file ESpecStringTable
+			stream.ReadBytes((int)(stream.BaseStream.Length - stream.BaseStream.Position)); 
 
             EncodingMap = blte.EncodingMap.ToArray();
 
@@ -128,24 +132,24 @@ namespace CASCEdit.Handlers
                 return;
 
             // create the entry
-            var entry = new EncodingEntry()
+            var entry = new EncodingCEKeyPageTable()
             {
                 DecompressedSize = blte.DecompressedSize,
-                Hash = blte.DataHash,
+                CKey = blte.DataHash,
             };
-            entry.Keys.Add(blte.Hash);
+            entry.EKeys.Add(blte.Hash);
 
-            if (Data.ContainsKey(blte.DataHash)) // check if it exists
+            if (CEKeys.ContainsKey(blte.DataHash)) // check if it exists
             {
-                var existing = Data[blte.DataHash];
-                if (Layout.ContainsKey(existing.Keys[0])) // remove old layout
-                    Layout.Remove(existing.Keys[0]);
+                var existing = CEKeys[blte.DataHash];
+                if (EKeys.ContainsKey(existing.EKeys[0])) // remove old layout
+                    EKeys.Remove(existing.EKeys[0]);
 
-                existing.Keys[0] = blte.Hash; // update existing entry
+                existing.EKeys[0] = blte.Hash; // update existing entry
             }                
             else
             {
-                Data.Add(entry.Hash, entry); // new entry
+                CEKeys.Add(entry.CKey, entry); // new entry
             }
 
             AddLayoutEntry(blte);
@@ -153,38 +157,40 @@ namespace CASCEdit.Handlers
 
         private void AddLayoutEntry(CASResult blte)
         {
-            if (Layout.ContainsKey(blte.Hash))
-                Layout.Remove(blte.Hash);
+            if (EKeys.ContainsKey(blte.Hash))
+                EKeys.Remove(blte.Hash);
 
-            // get layout string
-            string layoutString;
+			// generate ESpecString
+			string ESpecString;
             uint size = blte.CompressedSize - 30;
 
-            if (blte.DataHash == CASContainer.BuildConfig.GetKey("root")) // root is always z
-                layoutString = "z";
+			// the below suffices and is technically correct
+			// however this could be more compliant https://wowdev.wiki/CASC#Encoding_Specification_.28ESpec.29
+			if (blte.DataHash == CASContainer.BuildConfig.GetKey("root")) // root is always z
+                ESpecString = "z";
             else if (size >= 1024 * 256) // 256K* seems to be the max
-                layoutString = "b:{256K*=z}";
+                ESpecString = "b:{256K*=z}";
             else if (size > 1024)
-                layoutString = "b:{" + (int)Math.Floor(size / 1024d) + "K*=z}"; // closest floored KB
+                ESpecString = "b:{" + (int)Math.Floor(size / 1024d) + "K*=z}"; // closest floored KB
             else
-                layoutString = "b:{" + size + "*=z}"; // actual B size
+                ESpecString = "b:{" + size + "*=z}"; // actual B size
 
             // string index
-            int stridx = LayoutStringTable.IndexOf(layoutString);
+            int stridx = ESpecStringTable.IndexOf(ESpecString);
             if (stridx == -1)
             {
-                stridx = LayoutStringTable.Count - 2; // ignore the 0 byte
-                LayoutStringTable.Insert(stridx, layoutString);
+                stridx = ESpecStringTable.Count - 2; // ignore the 0 byte
+                ESpecStringTable.Insert(stridx, ESpecString);
             }
 
             // create the entry
-            var entry = new EncodingLayout()
+            var entry = new EncodingEKeyPageTable()
             {
-                Size = size,
-                Hash = blte.Hash,
-                StringIndex = (uint)stridx
+                FileSize = size,
+                EKey = blte.Hash,
+                ESpecStringIndex = (uint)stridx
             };
-            Layout.Add(entry.Hash, entry);
+            EKeys.Add(entry.EKey, entry);
         }
 
 
@@ -193,16 +199,16 @@ namespace CASCEdit.Handlers
             byte[][] entries = new byte[EncodingMap.Length][];
             CASFile[] files = new CASFile[EncodingMap.Length];
 
-            //StringTable A 1
-            entries[1] = Encoding.UTF8.GetBytes(string.Join("\0", LayoutStringTable));
+            // ESpecStringTable 1
+            entries[1] = Encoding.UTF8.GetBytes(string.Join("\0", ESpecStringTable));
             files[1] = new CASFile(entries[1], EncodingMap[1].Type, EncodingMap[1].CompressionLevel);
 
-            //Data Blocks 3
-            using (MemoryStream ms = new MemoryStream())
+			// CEKeysPageTable Data 3
+			using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
                 long pos = 0;
-                foreach (var entry in Data.Values)
+                foreach (var entry in CEKeys.Values)
                 {
                     if (pos + entry.EntrySize > CHUNK_SIZE)
                     {
@@ -210,11 +216,11 @@ namespace CASCEdit.Handlers
 						pos = 0;
                     }
 
-                    bw.Write((ushort)entry.Keys.Count);
+                    bw.Write((ushort)entry.EKeys.Count);
                     bw.WriteUInt32BE(entry.DecompressedSize);
-                    bw.Write(entry.Hash.Value);
-                    for (int i = 0; i < entry.Keys.Count; i++)
-                        bw.Write(entry.Keys[i].Value);
+                    bw.Write(entry.CKey.Value);
+                    for (int i = 0; i < entry.EKeys.Count; i++)
+                        bw.Write(entry.EKeys[i].Value);
 
                     pos += entry.EntrySize;
                 }
@@ -225,12 +231,12 @@ namespace CASCEdit.Handlers
                 files[3] = new CASFile(entries[3], EncodingMap[3].Type, EncodingMap[3].CompressionLevel);
             }
 
-            //Layout Blocks 5
-            using (MemoryStream ms = new MemoryStream())
+			// EKeysPageTable Data 5
+			using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
                 long pos = 0;
-                foreach (var entry in Layout.Values)
+                foreach (var entry in EKeys.Values)
                 {
                     if (pos + entry.EntrySize > CHUNK_SIZE)
                     {
@@ -238,9 +244,9 @@ namespace CASCEdit.Handlers
                         pos = 0;
                     }
 
-                    bw.Write(entry.Hash.Value);
-                    bw.WriteUInt32BE(entry.StringIndex);
-                    bw.WriteUInt40BE(entry.Size);
+                    bw.Write(entry.EKey.Value);
+                    bw.WriteUInt32BE(entry.ESpecStringIndex);
+                    bw.WriteUInt40BE(entry.FileSize);
 
                     pos += entry.EntrySize;
                 }
@@ -256,8 +262,8 @@ namespace CASCEdit.Handlers
                 files[5] = new CASFile(entries[5], EncodingMap[5].Type, EncodingMap[5].CompressionLevel);
             }
 
-            //Data Header 2
-            using (var md5 = MD5.Create())
+			// CEKeysPageTable lookup 2
+			using (var md5 = MD5.Create())
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
@@ -276,8 +282,8 @@ namespace CASCEdit.Handlers
                 files[2] = new CASFile(entries[2], EncodingMap[2].Type, EncodingMap[2].CompressionLevel);
             }
 
-            //Layout Header 4
-            using (var md5 = MD5.Create())
+			// EKeysPageTable lookup 4
+			using (var md5 = MD5.Create())
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
@@ -296,25 +302,26 @@ namespace CASCEdit.Handlers
                 files[4] = new CASFile(entries[4], EncodingMap[4].Type, EncodingMap[4].CompressionLevel);
             }
 
-            //Header 0
+            // Encoding Header 0
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
                 bw.Write(Header.Magic);
                 bw.Write(Header.Version);
-                bw.Write(Header.ChecksumSizeA);
-                bw.Write(Header.ChecksumSizeB);
-                bw.Write(Header.FlagsA);
-                bw.Write(Header.FlagsB);
+                bw.Write(Header.ChecksumSizeC);
+                bw.Write(Header.ChecksumSizeE);
+                bw.Write(Header.PageSizeCEKey);
+                bw.Write(Header.PageSizeEKey);
                 bw.WriteUInt32BE((uint)entries[2].Length / 32);
                 bw.WriteUInt32BE((uint)entries[4].Length / 32);
-                bw.WriteUInt40BE((ulong)Encoding.UTF8.GetByteCount(string.Join("\0", LayoutStringTable)));
+				bw.Write(Header.Unknown_x11);
+                bw.WriteUInt32BE((uint)Encoding.UTF8.GetByteCount(string.Join("\0", ESpecStringTable)));
 
                 entries[0] = ms.ToArray();
                 files[0] = new CASFile(entries[0], EncodingMap[0].Type, EncodingMap[0].CompressionLevel);
             }
 
-            //StringTableB 6
+            // Encoding's own ESpecStringTable 6
             entries[6] = GetStringTable(entries.Select(x => x.Length));
             files[6] = new CASFile(entries[6], EncodingMap[6].Type, EncodingMap[6].CompressionLevel);
 
@@ -326,7 +333,7 @@ namespace CASCEdit.Handlers
             CASContainer.Logger.LogInformation($"Encoding: Hash: {res.Hash} Data: {res.DataHash}");
 
             CASContainer.BuildConfig.Set("encoding-size", res.DecompressedSize.ToString());
-            CASContainer.BuildConfig.Set("encoding-size", (res.CompressedSize - 30).ToString(), 1); //BLTE size minus header
+            CASContainer.BuildConfig.Set("encoding-size", (res.CompressedSize - 30).ToString(), 1); // BLTE size minus header
             CASContainer.BuildConfig.Set("encoding", res.DataHash.ToString());
             CASContainer.BuildConfig.Set("encoding", res.Hash.ToString(), 1);
 
@@ -364,13 +371,13 @@ namespace CASCEdit.Handlers
         public void Dispose()
         {
             Header = null;
-            LayoutStringTable.Clear();
-            LayoutStringTable.TrimExcess();
-            LayoutStringTable = null;
-            Data.Clear();
-            Data = null;
-            Layout.Clear();
-            Layout = null;
+            ESpecStringTable.Clear();
+            ESpecStringTable.TrimExcess();
+            ESpecStringTable = null;
+            CEKeys.Clear();
+            CEKeys = null;
+            EKeys.Clear();
+            EKeys = null;
         }
     }
 }

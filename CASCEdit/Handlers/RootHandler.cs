@@ -231,7 +231,7 @@ namespace CASCEdit.Handlers
 		public BLTEStream OpenFile(string cascpath)
 		{
 			var entry = GetEntry(cascpath);
-			if (entry != null && CASContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
+			if (entry != null && CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.MD5, out EncodingEntry enc))
 			{
 				LocalIndexEntry idxInfo = CASContainer.LocalIndexHandler.GetIndexInfo(enc.Keys[0]);
 				if (idxInfo != null)
@@ -267,7 +267,7 @@ namespace CASCEdit.Handlers
 				var entries = root.Entries.Where(x => x.Hash == hash);
 				foreach (var entry in entries)
 				{
-					var blte = CASContainer.EncodingHandler.Data[entry.MD5].Keys[0];
+					var blte = CASContainer.EncodingHandler.CEKeys[entry.MD5].EKeys[0];
 					entry.Hash = newhash;
 					entry.Path = path;
 
@@ -285,7 +285,7 @@ namespace CASCEdit.Handlers
 				var entries = root.Entries.Where(x => x.Hash == hash).ToArray(); // should only ever be one but just incase
 				foreach(var entry in entries)
 				{
-					if (CASContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
+					if (CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.MD5, out EncodingEntry enc))
 					{
 						CASContainer.DownloadHandler?.RemoveEntry(enc.Keys[0]); // remove from download
 						CASContainer.CDNIndexHandler?.RemoveEntry(enc.Keys[0]); // remove from cdn index

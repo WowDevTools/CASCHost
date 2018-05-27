@@ -72,7 +72,7 @@ namespace CASCEdit.Patch
             if (entry == null)
                 return null;
 
-            if (CASContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
+            if (CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.MD5, out EncodingEntry enc))
             {
                 string key = enc.Keys[0].ToString();
                 string outpath = Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(key, "data"));

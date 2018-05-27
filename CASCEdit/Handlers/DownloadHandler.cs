@@ -90,6 +90,11 @@ namespace CASCEdit.Handlers
 						BitMask = new BoolArray(br.ReadBytes(numMaskBytes))
 					};
 
+					// We need to remove trailing bits from the padded byte array.
+					while (tag.BitMask.Count != Entries.Count) {
+						tag.BitMask.RemoveAt(tag.BitMask.Count - 1);
+					}
+
 					Tags.Add(tag);
 				}
 
@@ -121,22 +126,21 @@ namespace CASCEdit.Handlers
 			int index = endofStageIndex[entry.Stage];
 			if (index >= 0)
 			{
-				if (entry.Stage == 0) endofStageIndex[0]++;
-				endofStageIndex[1]++;
+				endofStageIndex[entry.Stage]++;
 
 				Entries.Insert(index, entry);
 
-				foreach (var tag in Tags)
-					if (tag.Name != "Alternate")
-						tag.BitMask.Insert(index, true);
+				foreach (var tag in Tags) {
+					tag.BitMask.Insert(index, tag.Name != "Alternate");
+				}
 			}
 			else
 			{
 				Entries.Add(entry);
 
-				foreach (var tag in Tags)
-					if (tag.Name != "Alternate")
-						tag.BitMask.Add(true);
+				foreach (var tag in Tags) {
+					tag.BitMask.Add(tag.Name != "Alternate");
+				}
 			}
 		}
 

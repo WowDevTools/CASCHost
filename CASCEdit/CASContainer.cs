@@ -362,7 +362,11 @@ namespace CASCEdit
 			if(InstallHandler != null)
 			{
 				Settings.Logger.LogInformation("Starting Install.");
-				InstallHandler.Write(entries);
+				var installManifest = InstallHandler.Write(entries);
+
+				if (installManifest != null) {
+					entries.Add(installManifest); //Add to entry list
+				}
 			}
 
 			// Encoding

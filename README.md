@@ -11,7 +11,7 @@ Included is a rough [diagram](CASC_Diagram.svg) of how CAS works to attempt to e
 
 #### Requirements: ####
 
-*  [.Net Core 2.0](https://www.microsoft.com/net/download/core)
+*  [.Net Core 2.1](https://www.microsoft.com/net/download/core)
 * A MySQL server (version 5.6+)
 * A public domain name (if hosting a public server)
 

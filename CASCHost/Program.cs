@@ -9,27 +9,27 @@ using Microsoft.Extensions.Logging;
 
 namespace CASCHost
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
+	public class Program
+	{
+		public static void Main(string[] args)
+		{
 
-            Directory.CreateDirectory("wwwroot");
+			Directory.CreateDirectory("wwwroot");
 
-            var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("hosting.json", optional: true)
-                .Build();
+			var config = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("hosting.json", optional: true)
+				.Build();
 
-            var host = new WebHostBuilder()
-                .ConfigureLogging(options => options.AddConsole())
-                .UseConfiguration(config)
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseKestrel(options => options.NoDelay = true)
-                .UseStartup<Startup>()
-                .Build();
+			var host = new WebHostBuilder()
+				.ConfigureLogging(options => options.AddConsole())
+				.UseConfiguration(config)
+				.UseContentRoot(Directory.GetCurrentDirectory())
+				.UseKestrel(options => options.ConfigureEndpointDefaults(opts => opts.NoDelay = true))
+				.UseStartup<Startup>()
+				.Build();
 
-            host.Run();
-        }
-    }
+			host.Run();
+		}
+	}
 }

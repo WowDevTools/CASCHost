@@ -180,7 +180,9 @@ namespace CASCHost
 					{
 						ToPurge.Add(entry.Path);
 
-						string filepath = Path.Combine(env.WebRootPath, "Output", Helper.GetCDNPath(entry.BLTE.ToString()));
+						string cdnpath = Helper.GetCDNPath(entry.BLTE.ToString(), "", "", Startup.Settings.StaticMode);
+						string filepath = Path.Combine(env.WebRootPath, "Output", cdnpath);
+
 						if (File.Exists(filepath))
 							File.Delete(filepath);
 						if (File.Exists(Path.Combine(env.WebRootPath, "Data", entry.Path)))

@@ -45,17 +45,22 @@ namespace CASCEdit.Handlers
 					Header = br.ReadBytes(2),
 					Version = br.ReadByte(),
 					ChecksumSize = br.ReadByte(),
-					Unknown = br.ReadByte(),
+					HasChecksum = br.ReadByte(),
 					NumEntries = br.ReadUInt32BE(),
 					NumTags = br.ReadUInt16BE(),
 				};
 
-				if (Header.Version >= 3) {
-					throw new NotImplementedException("Download file versions newer than 2 are not supported.");
+				if (Header.Version >= 2)
+				{
+					Header.NumFlags = br.ReadByte();
 				}
 
-				if (Header.Version >= 2) {
-					Header.NumFlags = br.ReadByte();
+				if (Header.Version >= 3)
+				{
+					// TODO do we have a version 3 file to test with?
+					//Header.BasePriority = br.ReadByte();
+					//Header.Unknown_0D = br.ReadBytes(3);
+					throw new NotImplementedException("Download file versions newer than 2 are not supported.");
 				}
 
 				// entries
@@ -65,15 +70,17 @@ namespace CASCEdit.Handlers
 					{
 						EKey = new MD5Hash(br),
 						FileSize = br.ReadUInt40BE(),
-						Stage = br.ReadByte()
+						Priority = br.ReadByte()
 					};
 
-					if (Header.Unknown != 0) {
-						entry.Unknown = br.ReadUInt32BE();
+					if (Header.HasChecksum != 0)
+					{
+						entry.Checksum = br.ReadUInt32BE();
 					}
 
-					if (Header.Version >= 2) {
-						entry.Flags = br.ReadBytes(Header.NumFlags);
+					if (Header.Version >= 2)
+					{
+						entry.Flags = (DownloadFlags[])(object)br.ReadBytes(Header.NumFlags);
 					}
 
 					Entries.Add(entry);
@@ -91,7 +98,8 @@ namespace CASCEdit.Handlers
 					};
 
 					// We need to remove trailing bits from the padded byte array.
-					while (tag.BitMask.Count != Entries.Count) {
+					while (tag.BitMask.Count != Entries.Count)
+					{
 						tag.BitMask.RemoveAt(tag.BitMask.Count - 1);
 					}
 
@@ -102,8 +110,8 @@ namespace CASCEdit.Handlers
 
 				endofStageIndex = new int[] // store last indice of each stage
 				{
-					Entries.FindLastIndex(x => x.Stage == 0),
-					Entries.FindLastIndex(x => x.Stage == 1)
+					Entries.FindLastIndex(x => x.Priority == 0),
+					Entries.FindLastIndex(x => x.Priority == 1)
 				};
 			}
 
@@ -119,18 +127,24 @@ namespace CASCEdit.Handlers
 			{
 				EKey = blte.EKey,
 				FileSize = blte.CompressedSize - 30,
-				Flags = new byte[Header.NumFlags],
-				Stage = (byte)(blte.HighPriority ? 0 : 1)
+				Flags = new DownloadFlags[Header.NumFlags],
+				Priority = (byte)(blte.HighPriority ? 0 : 1)
 			};
 
-			int index = endofStageIndex[entry.Stage];
+			if (Header.HasChecksum != 0)
+			{
+				//entry.Checksum = 
+			}
+
+			int index = endofStageIndex[entry.Priority];
 			if (index >= 0)
 			{
-				endofStageIndex[entry.Stage]++;
+				endofStageIndex[entry.Priority]++;
 
 				Entries.Insert(index, entry);
 
-				foreach (var tag in Tags) {
+				foreach (var tag in Tags)
+				{
 					tag.BitMask.Insert(index, tag.Name != "Alternate");
 				}
 			}
@@ -138,7 +152,8 @@ namespace CASCEdit.Handlers
 			{
 				Entries.Add(entry);
 
-				foreach (var tag in Tags) {
+				foreach (var tag in Tags)
+				{
 					tag.BitMask.Add(tag.Name != "Alternate");
 				}
 			}
@@ -166,12 +181,20 @@ namespace CASCEdit.Handlers
 				bw.Write(Header.Header);
 				bw.Write(Header.Version);
 				bw.Write(Header.ChecksumSize);
-				bw.Write(Header.Unknown);
+				bw.Write(Header.HasChecksum);
 				bw.WriteUInt32BE((uint)Entries.Count);
 				bw.WriteUInt16BE((ushort)Tags.Count);
 
-				if (Header.Version >= 2) {
+				if (Header.Version >= 2)
+				{
 					bw.Write(Header.NumFlags);
+				}
+
+				if (Header.Version >= 3)
+				{
+					// TODO
+					//bw.Write(Header.BasePriority);
+					//bw.Write(Header.Unknown_0D);
 				}
 
 				entries[0] = ms.ToArray();
@@ -186,14 +209,16 @@ namespace CASCEdit.Handlers
 				{
 					bw.Write(entry.EKey.Value);
 					bw.WriteUInt40BE(entry.FileSize);
-					bw.Write(entry.Stage);
+					bw.Write(entry.Priority);
 
-					if (Header.Unknown != 0) {
-						bw.WriteUInt32BE(entry.Unknown);
+					if (Header.HasChecksum != 0)
+					{
+						bw.WriteUInt32BE(entry.Checksum);
 					}
 
-					if (Header.Version >= 2) {
-						bw.Write(entry.Flags);
+					if (Header.Version >= 2)
+					{
+						bw.Write((byte[])(object)entry.Flags);
 					}
 				}
 

@@ -135,17 +135,17 @@ namespace CASCEdit.Handlers
 			var entry = new EncodingCEKeyPageTable()
 			{
 				DecompressedSize = blte.DecompressedSize,
-				CKey = blte.DataHash,
+				CKey = blte.CEKey,
 			};
-			entry.EKeys.Add(blte.Hash);
+			entry.EKeys.Add(blte.EKey);
 
-			if (CEKeys.ContainsKey(blte.DataHash)) // check if it exists
+			if (CEKeys.ContainsKey(blte.CEKey)) // check if it exists
 			{
-				var existing = CEKeys[blte.DataHash];
+				var existing = CEKeys[blte.CEKey];
 				if (EKeys.ContainsKey(existing.EKeys[0])) // remove old layout
 					EKeys.Remove(existing.EKeys[0]);
 
-				existing.EKeys[0] = blte.Hash; // update existing entry
+				existing.EKeys[0] = blte.EKey; // update existing entry
 			}
 			else
 			{
@@ -157,8 +157,8 @@ namespace CASCEdit.Handlers
 
 		private void AddLayoutEntry(CASResult blte)
 		{
-			if (EKeys.ContainsKey(blte.Hash))
-				EKeys.Remove(blte.Hash);
+			if (EKeys.ContainsKey(blte.EKey))
+				EKeys.Remove(blte.EKey);
 
 			// generate ESpecString
 			string ESpecString;
@@ -166,7 +166,7 @@ namespace CASCEdit.Handlers
 
 			// the below suffices and is technically correct
 			// however this could be more compliant https://wowdev.wiki/CASC#Encoding_Specification_.28ESpec.29
-			if (blte.DataHash == CASContainer.BuildConfig.GetKey("root")) // root is always z
+			if (blte.CEKey == CASContainer.BuildConfig.GetKey("root")) // root is always z
 				ESpecString = "z";
 			else if (size >= 1024 * 256) // 256K* seems to be the max
 				ESpecString = "b:{256K*=z}";
@@ -187,7 +187,7 @@ namespace CASCEdit.Handlers
 			var entry = new EncodingEKeyPageTable()
 			{
 				FileSize = size,
-				EKey = blte.Hash,
+				EKey = blte.EKey,
 				ESpecStringIndex = (uint)stridx
 			};
 			EKeys.Add(entry.EKey, entry);
@@ -328,14 +328,14 @@ namespace CASCEdit.Handlers
 			//Write
 			CASResult res = DataHandler.Write(WriteMode.CDN, files);
 			using (var md5 = MD5.Create())
-				res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
+				res.CEKey = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
 
-			CASContainer.Logger.LogInformation($"Encoding: Hash: {res.Hash} Data: {res.DataHash}");
+			CASContainer.Logger.LogInformation($"Encoding: EKey: {res.EKey} CEKey: {res.CEKey}");
 
 			CASContainer.BuildConfig.Set("encoding-size", res.DecompressedSize.ToString());
 			CASContainer.BuildConfig.Set("encoding-size", (res.CompressedSize - 30).ToString(), 1); // BLTE size minus header
-			CASContainer.BuildConfig.Set("encoding", res.DataHash.ToString());
-			CASContainer.BuildConfig.Set("encoding", res.Hash.ToString(), 1);
+			CASContainer.BuildConfig.Set("encoding", res.CEKey.ToString());
+			CASContainer.BuildConfig.Set("encoding", res.EKey.ToString(), 1);
 
 			Array.Resize(ref entries, 0);
 			Array.Resize(ref files, 0);
@@ -343,7 +343,7 @@ namespace CASCEdit.Handlers
 			files = null;
 
 			// cache Encoding Hash
-			CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { MD5 = res.DataHash, BLTE = res.Hash, Path = "__ENCODING__" });
+			CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { CEKey = res.CEKey, EKey = res.EKey, Path = "__ENCODING__" });
 
 			return res;
 		}

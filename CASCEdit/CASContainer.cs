@@ -430,12 +430,12 @@ namespace CASCEdit
 			bool BuildBLTE(KeyValuePair<string, CASFile> file)
 			{
 				CASResult res = DataHandler.Write(WriteMode.CDN, file.Value);
-				res.DataHash = file.Value.DataHash;
+				res.CEKey = file.Value.DataHash;
 				res.Path = file.Key;
 				//res.HighPriority // only used by download handler
 				entries.Add(res);
 
-				Logger.LogInformation($"{Path.GetFileName(res.Path)}: Hash: {res.Hash} Data: {res.DataHash}");
+				Logger.LogInformation($"{Path.GetFileName(res.Path)}: EKey: {res.EKey} CEKey: {res.CEKey}");
 				return true;
 			}
 

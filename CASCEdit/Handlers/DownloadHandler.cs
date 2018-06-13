@@ -63,7 +63,7 @@ namespace CASCEdit.Handlers
 				{
 					var entry = new DownloadEntry()
 					{
-						Hash = new MD5Hash(br),
+						EKey = new MD5Hash(br),
 						FileSize = br.ReadUInt40BE(),
 						Stage = br.ReadByte()
 					};
@@ -112,12 +112,12 @@ namespace CASCEdit.Handlers
 
 		public void AddEntry(CASResult blte)
 		{
-			if (CASContainer.EncodingHandler.EKeys.ContainsKey(blte.Hash)) // skip existing
+			if (CASContainer.EncodingHandler.EKeys.ContainsKey(blte.EKey)) // skip existing
 				return;
 
 			var entry = new DownloadEntry()
 			{
-				Hash = blte.Hash,
+				EKey = blte.EKey,
 				FileSize = blte.CompressedSize - 30,
 				Flags = new byte[Header.NumFlags],
 				Stage = (byte)(blte.HighPriority ? 0 : 1)
@@ -146,7 +146,7 @@ namespace CASCEdit.Handlers
 
 		public void RemoveEntry(MD5Hash hash)
 		{
-			int index = Entries.FindIndex(x => x.Hash == hash);
+			int index = Entries.FindIndex(x => x.EKey == hash);
 			if (index > -1)
 			{
 				Entries.RemoveAt(index);
@@ -184,7 +184,7 @@ namespace CASCEdit.Handlers
 			{
 				foreach (var entry in Entries)
 				{
-					bw.Write(entry.Hash.Value);
+					bw.Write(entry.EKey.Value);
 					bw.WriteUInt40BE(entry.FileSize);
 					bw.Write(entry.Stage);
 
@@ -221,15 +221,15 @@ namespace CASCEdit.Handlers
 			// write
 			CASResult res = DataHandler.Write(WriteMode.CDN, files);
 			using (var md5 = MD5.Create())
-				res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
+				res.CEKey = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
 
 			File.Delete(Path.Combine(CASContainer.Settings.OutputPath, CASContainer.BuildConfig["download"][0]));
 
-			CASContainer.Logger.LogInformation($"Download: Hash: {res.Hash} Data: {res.DataHash}");
+			CASContainer.Logger.LogInformation($"Download: EKey: {res.EKey} CEKey: {res.CEKey}");
 			CASContainer.BuildConfig.Set("download-size", res.DecompressedSize.ToString());
 			CASContainer.BuildConfig.Set("download-size", (res.CompressedSize - 30).ToString(), 1);
-			CASContainer.BuildConfig.Set("download", res.DataHash.ToString());
-			CASContainer.BuildConfig.Set("download", res.Hash.ToString(), 1);
+			CASContainer.BuildConfig.Set("download", res.CEKey.ToString());
+			CASContainer.BuildConfig.Set("download", res.EKey.ToString(), 1);
 
 			Array.Resize(ref entries, 0);
 			Array.Resize(ref files, 0);

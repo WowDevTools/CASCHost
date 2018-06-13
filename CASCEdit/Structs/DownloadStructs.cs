@@ -20,7 +20,7 @@ namespace CASCEdit.Structs
 
     public class DownloadEntry
     {
-        public MD5Hash Hash;
+        public MD5Hash EKey;
         public ulong FileSize;
         public byte Stage;
 	    public UInt32 Unknown;

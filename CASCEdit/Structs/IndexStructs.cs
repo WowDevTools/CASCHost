@@ -16,7 +16,7 @@ namespace CASCEdit.Structs
 
     public class IndexEntry
     {
-        public MD5Hash Hash;
+        public MD5Hash EKey;
         public ushort ArchiveIndex;
         public uint Offset;
         public uint Size;

@@ -68,8 +68,8 @@ namespace CASCEdit.Handlers
 
 				foreach (var entry in chunk.Entries)
 				{
-					entry.MD5 = new MD5Hash(stream);
-					entry.Hash = stream.ReadUInt64();
+					entry.CEKey = new MD5Hash(stream);
+					entry.NameHash = stream.ReadUInt64();
 					maxId = Math.Max(maxId, entry.FileDataId);
 				}
 
@@ -103,7 +103,7 @@ namespace CASCEdit.Handlers
 				if (!CASContainer.Settings.Cache.HasId(e.FileDataId))
 				{
 					GlobalRoot.Entries.Remove(e);
-					File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(e.MD5.ToString(), "data")));
+					File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(e.CEKey.ToString(), "data")));
 				}
 			}
 
@@ -113,12 +113,12 @@ namespace CASCEdit.Handlers
 		{
 			var cache = CASContainer.Settings.Cache;
 
-			ulong hash = new Jenkins96().ComputeHash(path);
+			ulong namehash = new Jenkins96().ComputeHash(path);
 
 			var entries = Chunks
 						.FindAll(chunk => chunk.LocaleFlags.HasFlag(locale)) // Select locales that match selected locale
 						.SelectMany(chunk => chunk.Entries) // Flatten the array to get all entries within all matching chunks
-						.Where(e => e.Hash == hash);
+						.Where(e => e.NameHash == namehash);
 						
 			if (entries.Count() == 0) { // New file, we need to create an entry for it
 				var cached = cache.Entries.FirstOrDefault(x => x.Path == path);
@@ -129,10 +129,10 @@ namespace CASCEdit.Handlers
 				}
 
 				var entry = new RootEntry() {
-					MD5 = file.DataHash,
+					CEKey = file.CEKey,
 					FileDataId = fileDataId,
 					FileDataIdOffset = 0,
-					Hash = hash,
+					NameHash = namehash,
 					Path = path
 				};
 
@@ -140,10 +140,10 @@ namespace CASCEdit.Handlers
 				maxId = Math.Max(entry.FileDataId, maxId); // Update the max id
 			} else { // Existing file, we just have to update the data hash
 				foreach (var entry in entries) {
-					entry.MD5 = file.DataHash;
+					entry.CEKey = file.CEKey;
 					entry.Path = path;
 
-					cache?.AddOrUpdate(new CacheEntry(entry, file.Hash));
+					cache?.AddOrUpdate(new CacheEntry(entry, file.EKey));
 				}
 			}
 		}
@@ -185,8 +185,8 @@ namespace CASCEdit.Handlers
 
 					foreach (var e in c.Entries)
 					{
-						bw.Write(e.MD5.Value);
-						bw.Write(e.Hash);
+						bw.Write(e.CEKey.Value);
+						bw.Write(e.NameHash);
 					}
 				}
 
@@ -195,14 +195,14 @@ namespace CASCEdit.Handlers
 
 				// save and update Build Config
 				CASResult res = DataHandler.Write(WriteMode.CDN, entry);
-				res.DataHash = new MD5Hash(md5.ComputeHash(ms.ToArray()));
+				res.CEKey = new MD5Hash(md5.ComputeHash(ms.ToArray()));
 				res.HighPriority = true;
-				CASContainer.BuildConfig.Set("root", res.DataHash.ToString());
+				CASContainer.BuildConfig.Set("root", res.CEKey.ToString());
 
-				CASContainer.Logger.LogInformation($"Root: Hash: {res.Hash} Data: {res.DataHash}");
+				CASContainer.Logger.LogInformation($"Root: EKey: {res.EKey} CEKey: {res.CEKey}");
 
 				// cache Root Hash
-				CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { MD5 = res.DataHash, BLTE = res.Hash, Path = "__ROOT__" });
+				CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry() { CEKey = res.CEKey, EKey = res.EKey, Path = "__ROOT__" });
 
 				return res;
 			}
@@ -214,9 +214,9 @@ namespace CASCEdit.Handlers
 		public BLTEStream OpenFile(string cascpath)
 		{
 			var entry = GetEntry(cascpath);
-			if (entry != null && CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.MD5, out EncodingEntry enc))
+			if (entry != null && CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.CEKey, out EncodingCEKeyPageTable enc))
 			{
-				LocalIndexEntry idxInfo = CASContainer.LocalIndexHandler.GetIndexInfo(enc.Keys[0]);
+				LocalIndexEntry idxInfo = CASContainer.LocalIndexHandler.GetIndexInfo(enc.EKeys[0]);
 				if (idxInfo != null)
 				{
 					var path = Path.Combine(CASContainer.BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
@@ -224,7 +224,7 @@ namespace CASCEdit.Handlers
 				}
 				else
 				{
-					return DataHandler.ReadDirect(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(enc.Keys[0].ToString(), "data")));
+					return DataHandler.ReadDirect(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(enc.EKeys[0].ToString(), "data")));
 				}
 			}
 
@@ -247,11 +247,11 @@ namespace CASCEdit.Handlers
 				if (!root.LocaleFlags.HasFlag(locale) && root != GlobalRoot) // ignore incorrect locale and not global
 					continue;
 
-				var entries = root.Entries.Where(x => x.Hash == hash);
+				var entries = root.Entries.Where(x => x.NameHash == hash);
 				foreach (var entry in entries)
 				{
-					var blte = CASContainer.EncodingHandler.CEKeys[entry.MD5].EKeys[0];
-					entry.Hash = newhash;
+					var blte = CASContainer.EncodingHandler.CEKeys[entry.CEKey].EKeys[0];
+					entry.NameHash = newhash;
 					entry.Path = path;
 
 					CASContainer.Settings.Cache?.AddOrUpdate(new CacheEntry(entry, blte));
@@ -265,13 +265,13 @@ namespace CASCEdit.Handlers
 
 			foreach (var root in Chunks)
 			{
-				var entries = root.Entries.Where(x => x.Hash == hash).ToArray(); // should only ever be one but just incase
+				var entries = root.Entries.Where(x => x.NameHash == hash).ToArray(); // should only ever be one but just incase
 				foreach(var entry in entries)
 				{
-					if (CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.MD5, out EncodingEntry enc))
+					if (CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.CEKey, out EncodingCEKeyPageTable enc))
 					{
-						CASContainer.DownloadHandler?.RemoveEntry(enc.Keys[0]); // remove from download
-						CASContainer.CDNIndexHandler?.RemoveEntry(enc.Keys[0]); // remove from cdn index
+						CASContainer.DownloadHandler?.RemoveEntry(enc.EKeys[0]); // remove from download
+						CASContainer.CDNIndexHandler?.RemoveEntry(enc.EKeys[0]); // remove from cdn index
 					}
 
 					root.Entries.Remove(entry);
@@ -289,7 +289,7 @@ namespace CASCEdit.Handlers
 
 		public RootEntry GetEntry(uint fileid) => GlobalRoot.Entries.Where(x => x.FileDataId == fileid).OrderByDescending(x => x.FileDataId).FirstOrDefault();
 
-		public RootEntry GetEntry(ulong hash) => GlobalRoot.Entries.Where(x => x.Hash == hash).OrderByDescending(x => x.FileDataId).FirstOrDefault();
+		public RootEntry GetEntry(ulong hash) => GlobalRoot.Entries.Where(x => x.NameHash == hash).OrderByDescending(x => x.FileDataId).FirstOrDefault();
 
 		#endregion
 

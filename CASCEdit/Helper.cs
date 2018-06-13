@@ -4,11 +4,11 @@ namespace CASCEdit
 {
     public class Helper
     {
-        public static string GetCDNPath(string filename, string type = "", string basepath = "")
+        public static string GetCDNPath(string filename, string type = "", string basepath = "", bool staticoverride = false)
         {
             string path = "";
 
-            if (!CASContainer.Settings.StaticMode)
+            if (!(CASContainer.Settings?.StaticMode ?? staticoverride))
             {
                 return filename;
             }
@@ -31,7 +31,7 @@ namespace CASCEdit
                     break;
             }
 
-            Directory.CreateDirectory(Path.Combine(CASContainer.Settings.OutputPath, Path.GetDirectoryName(path)));
+            Directory.CreateDirectory(Path.Combine(CASContainer.Settings?.OutputPath ?? "Output", Path.GetDirectoryName(path)));
             return path;
         }
 

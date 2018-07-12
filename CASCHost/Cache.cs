@@ -61,7 +61,7 @@ namespace CASCHost
 
 				RootFiles[item.Path] = item;
 
-				queries.Enqueue(string.Format(REPLACE_RECORD, MySqlHelper.EscapeString(item.Path), item.FileDataId, item.Hash, item.MD5, item.BLTE));
+				queries.Enqueue(string.Format(REPLACE_RECORD, MySqlHelper.EscapeString(item.Path), item.FileDataId, item.NameHash, item.CEKey, item.EKey));
 				return;
 			}
 
@@ -79,7 +79,7 @@ namespace CASCHost
 			// Add
 			RootFiles.Add(item.Path, item);
 
-			queries.Enqueue(string.Format(REPLACE_RECORD, MySqlHelper.EscapeString(item.Path), item.FileDataId, item.Hash, item.MD5, item.BLTE));
+			queries.Enqueue(string.Format(REPLACE_RECORD, MySqlHelper.EscapeString(item.Path), item.FileDataId, item.NameHash, item.CEKey, item.EKey));
 		}
 
 		public void Remove(string file)
@@ -108,10 +108,10 @@ namespace CASCHost
 		public void Clean()
 		{
 			//Delete previous Root and Encoding
-			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data"))))
-				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].BLTE.ToString(), "data")));
-			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data"))))
-				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].BLTE.ToString(), "data")));
+			if (RootFiles.ContainsKey("__ROOT__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].EKey.ToString(), "data"))))
+				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ROOT__"].EKey.ToString(), "data")));
+			if (RootFiles.ContainsKey("__ENCODING__") && File.Exists(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].EKey.ToString(), "data"))))
+				File.Delete(Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(RootFiles["__ENCODING__"].EKey.ToString(), "data")));
 		}
 
 
@@ -159,9 +159,9 @@ namespace CASCHost
 					{
 						Path = reader.GetFieldValue<string>(1),
 						FileDataId = reader.GetFieldValue<uint>(2),
-						Hash = reader.GetFieldValue<ulong>(3),
-						MD5 = new MD5Hash(reader.GetFieldValue<string>(4).ToByteArray()),
-						BLTE = new MD5Hash(reader.GetFieldValue<string>(5).ToByteArray())
+						NameHash = reader.GetFieldValue<ulong>(3),
+						CEKey = new MD5Hash(reader.GetFieldValue<string>(4).ToByteArray()),
+						EKey = new MD5Hash(reader.GetFieldValue<string>(5).ToByteArray())
 					};
 
 					// keep files that still exist or are special and not flagged to be deleted
@@ -180,7 +180,7 @@ namespace CASCHost
 					{
 						ToPurge.Add(entry.Path);
 
-						string cdnpath = Helper.GetCDNPath(entry.BLTE.ToString(), "", "", Startup.Settings.StaticMode);
+						string cdnpath = Helper.GetCDNPath(entry.EKey.ToString(), "", "", Startup.Settings.StaticMode);
 						string filepath = Path.Combine(env.WebRootPath, "Output", cdnpath);
 
 						if (File.Exists(filepath))

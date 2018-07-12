@@ -79,7 +79,7 @@ namespace CASCEdit.Handlers
             var entry = new LocalIndexEntry()
             {
                 Archive = blte.Archive,
-                Key = blte.Hash.Value.Take(9).ToArray(),
+                Key = blte.EKey.Value.Take(9).ToArray(),
                 Offset = blte.Offset,
                 Size = blte.CompressedSize
             };

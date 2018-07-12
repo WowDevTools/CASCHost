@@ -43,12 +43,12 @@ namespace CASCEdit.Handlers
 					{
 						IndexEntry entry = new IndexEntry()
 						{
-							Hash = new MD5Hash(br),
+							EKey = new MD5Hash(br),
 							Size = br.ReadUInt32BE(),
 							Offset = br.ReadUInt32BE()
 						};
 
-						if (!entry.Hash.IsEmpty)
+						if (!entry.EKey.IsEmpty)
 							Entries.Add(entry);
 					}
 
@@ -102,7 +102,7 @@ namespace CASCEdit.Handlers
 
 					if (pos + entry.EntrySize > CHUNK_SIZE)
 					{
-						entryHashes.Add(Entries[i - 1].Hash.Value); //Last entry hash
+						entryHashes.Add(Entries[i - 1].EKey.Value); //Last entry hash
 
 						bw.Write(new byte[CHUNK_SIZE - pos]);
 						blockHashes.Add(GetBlockHash(bw, md5));
@@ -110,7 +110,7 @@ namespace CASCEdit.Handlers
 					}
 
 					entry.Offset = offset;
-					bw.Write(entry.Hash.Value);
+					bw.Write(entry.EKey.Value);
 					bw.WriteUInt32BE(entry.Size);
 					bw.WriteUInt32BE(entry.Offset);
 
@@ -121,7 +121,7 @@ namespace CASCEdit.Handlers
 				//Update final block
 				bw.Write(new byte[CHUNK_SIZE - pos]); //Final padding
 				blockCount = blockHashes.Count + 1;
-				entryHashes.Add(Entries.Last().Hash.Value); //Final entry hash
+				entryHashes.Add(Entries.Last().EKey.Value); //Final entry hash
 
 				//TOC
 				bw.Write(entryHashes.SelectMany(x => x).ToArray());

@@ -18,7 +18,7 @@ namespace CASCEdit.Structs
     public class InstallEntry
     {
         public string Name;
-        public MD5Hash MD5;
+        public MD5Hash CEKey;
         public uint Size;
     }
 

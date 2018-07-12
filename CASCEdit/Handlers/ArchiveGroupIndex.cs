@@ -48,13 +48,13 @@ namespace CASCEdit.Handlers
                     {
                         IndexEntry entry = new IndexEntry()
                         {
-                            Hash = new MD5Hash(br),
+                            EKey = new MD5Hash(br),
                             Size = br.ReadUInt32BE(),
                             ArchiveIndex = br.ReadUInt16BE(),
                             Offset = br.ReadUInt32BE()
                         };
 
-                        if (!entry.Hash.IsEmpty)
+                        if (!entry.EKey.IsEmpty)
                             block.Entries.Add(entry);
                     }
 
@@ -107,7 +107,7 @@ namespace CASCEdit.Handlers
                     block.Entries.Sort(new HashComparer());
                     foreach (var entry in block.Entries)
                     {
-                        bw.Write(entry.Hash.Value);
+                        bw.Write(entry.EKey.Value);
                         bw.WriteUInt32BE(entry.Size);
                         bw.WriteUInt16BE(entry.ArchiveIndex);
                         bw.WriteUInt32BE(entry.Offset);
@@ -123,7 +123,7 @@ namespace CASCEdit.Handlers
                 }
 
                 //TOC
-                bw.Write(Blocks.SelectMany(x => x.Entries.Last().Hash.Value).ToArray());
+                bw.Write(Blocks.SelectMany(x => x.Entries.Last().EKey.Value).ToArray());
 
                 //Block hashes
                 if (Blocks.Count > 1)

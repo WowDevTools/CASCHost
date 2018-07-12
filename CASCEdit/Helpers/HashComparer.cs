@@ -12,8 +12,8 @@ namespace CASCEdit.Helpers
     {
         public int Compare(MD5Hash x, MD5Hash y) => Compare(x.Value, y.Value);
         public int Compare(LocalIndexEntry x, LocalIndexEntry y) => Compare(x.Key, y.Key);
-        public int Compare(IndexEntry x, IndexEntry y) => Compare(x.Hash.Value, y.Hash.Value);
-        public int Compare(CASResult x, CASResult y) => Compare(x.Hash.Value, y.Hash.Value);
+        public int Compare(IndexEntry x, IndexEntry y) => Compare(x.EKey.Value, y.EKey.Value);
+        public int Compare(CASResult x, CASResult y) => Compare(x.EKey.Value, y.EKey.Value);
         public int Compare(string x, string y) => Compare(x.ToByteArray(), y.ToByteArray());
 
         public int Compare(byte[] x, byte[] y)

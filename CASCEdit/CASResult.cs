@@ -7,8 +7,8 @@ namespace CASCEdit
 {
     public class CASResult
     {
-        public MD5Hash Hash;
-        public MD5Hash DataHash;
+        public MD5Hash EKey;
+        public MD5Hash CEKey;
         public uint CompressedSize;
         public uint DecompressedSize;
 

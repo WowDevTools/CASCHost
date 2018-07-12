@@ -41,21 +41,21 @@ namespace CASCEdit.Handlers
 			ArchiveIndexHandler archive = Archives[0];
 
 			//Remove missing existing entries
-			archive.Entries.RemoveAll(x => !File.Exists(Path.Combine(CASContainer.Settings.OutputPath, x.Hash.ToString())));
+			archive.Entries.RemoveAll(x => !File.Exists(Path.Combine(CASContainer.Settings.OutputPath, x.EKey.ToString())));
 
 			//Add entries
 			foreach (var blte in entries)
 			{
-				if (!File.Exists(Path.Combine(CASContainer.Settings.OutputPath, blte.Hash.ToString())))
+				if (!File.Exists(Path.Combine(CASContainer.Settings.OutputPath, blte.EKey.ToString())))
 					continue;
 
 				var entry = new IndexEntry()
 				{
-					Hash = blte.Hash,
+					EKey = blte.EKey,
 					Size = blte.CompressedSize - 30, //BLTE minus header
 				};
 
-				archive.Entries.RemoveAll(x => x.Hash == entry.Hash);
+				archive.Entries.RemoveAll(x => x.EKey == entry.EKey);
 				archive.Entries.Add(entry);
 			}
 
@@ -80,7 +80,7 @@ namespace CASCEdit.Handlers
 
 				foreach (var entry in archive.Entries)
 				{
-					string entrypath = Path.Combine(CASContainer.Settings.OutputPath, entry.Hash.ToString());
+					string entrypath = Path.Combine(CASContainer.Settings.OutputPath, entry.EKey.ToString());
 					new FileInfo(entrypath).OpenRead().CopyTo(fs);
 					fs.Flush();
 				}
@@ -99,7 +99,7 @@ namespace CASCEdit.Handlers
 
 		public void RemoveEntry(MD5Hash hash)
 		{
-			Archives.ForEach(x => x.Entries.RemoveAll(y => y.Hash == hash));
+			Archives.ForEach(x => x.Entries.RemoveAll(y => y.EKey == hash));
 		}
 
 

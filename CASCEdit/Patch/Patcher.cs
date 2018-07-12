@@ -72,9 +72,9 @@ namespace CASCEdit.Patch
             if (entry == null)
                 return null;
 
-            if (CASContainer.EncodingHandler.Data.TryGetValue(entry.MD5, out EncodingEntry enc))
+            if (CASContainer.EncodingHandler.CEKeys.TryGetValue(entry.CEKey, out EncodingCEKeyPageTable enc))
             {
-                string key = enc.Keys[0].ToString();
+                string key = enc.EKeys[0].ToString();
                 string outpath = Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(key, "data"));
 
                 if (!File.Exists(outpath))

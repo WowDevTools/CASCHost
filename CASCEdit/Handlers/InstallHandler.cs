@@ -70,7 +70,7 @@ namespace CASCEdit.Handlers
 				InstallEntry entry = new InstallEntry()
 				{
 					Name = stream.ReadCString(),
-					MD5 = new MD5Hash(stream),
+					CEKey = new MD5Hash(stream),
 					Size = stream.ReadUInt32BE()
 				};
 
@@ -122,7 +122,7 @@ namespace CASCEdit.Handlers
 				{
 					bw.Write(Encoding.UTF8.GetBytes(entry.Name));
 					bw.Write((byte)0);
-					bw.Write(entry.MD5.Value);
+					bw.Write(entry.CEKey.Value);
 					bw.WriteUInt32BE(entry.Size);
 				}
 
@@ -133,14 +133,14 @@ namespace CASCEdit.Handlers
 			// write
 			CASResult res = DataHandler.Write(WriteMode.CDN, files);
 			using (var md5 = MD5.Create())
-				res.DataHash = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
+				res.CEKey = new MD5Hash(md5.ComputeHash(entries.SelectMany(x => x).ToArray()));
 
-			Console.WriteLine($"Install: Hash: {res.Hash} Data: {res.DataHash}");
+			Console.WriteLine($"Install: EKey: {res.EKey} CEKey: {res.CEKey}");
 
 			CASContainer.BuildConfig.Set("install-size", res.DecompressedSize.ToString());
 			CASContainer.BuildConfig.Set("install-size", (res.CompressedSize - 30).ToString(), 1); // BLTE size minus header
-			CASContainer.BuildConfig.Set("install", res.DataHash.ToString());
-			CASContainer.BuildConfig.Set("install", res.Hash.ToString(), 1);
+			CASContainer.BuildConfig.Set("install", res.CEKey.ToString());
+			CASContainer.BuildConfig.Set("install", res.EKey.ToString(), 1);
 
 			Array.Resize(ref entries, 0);
 			Array.Resize(ref files, 0);
@@ -161,9 +161,9 @@ namespace CASCEdit.Handlers
 
 				if (entry != null && existing != null)
 				{
-					if (entry.DataHash != existing.MD5 || entry.DecompressedSize != existing.Size)
+					if (entry.CEKey != existing.CEKey || entry.DecompressedSize != existing.Size)
 					{
-						existing.MD5 = entry.DataHash;
+						existing.CEKey = entry.CEKey;
 						existing.Size = entry.DecompressedSize;
 						needswrite = true;
 					}

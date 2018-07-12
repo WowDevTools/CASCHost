@@ -193,7 +193,7 @@ namespace CASCEdit.IO
 				{
 					DecompressedSize = (uint)entries.Sum(x => x.DecompressedSize),
 					CompressedSize = (uint)(bw.BaseStream.Length - posStart),
-					Hash = new MD5Hash(hash)
+					EKey = new MD5Hash(hash)
 				};
 
 				bw.BaseStream.Position = posStart;
@@ -219,7 +219,7 @@ namespace CASCEdit.IO
 				// Output raw
 				if (mode.HasFlag(WriteMode.CDN))
 				{
-					blte.OutPath = Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(blte.Hash.ToString(), "data"));
+					blte.OutPath = Path.Combine(CASContainer.Settings.OutputPath, Helper.GetCDNPath(blte.EKey.ToString(), "data"));
 					using (FileStream fs = new FileStream(blte.OutPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
 					{
 						ms.Position = 30; // Skip header

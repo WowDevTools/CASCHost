@@ -57,9 +57,9 @@ namespace CASCEdit.Structs
 
     public class RootEntry
     {
-        public MD5Hash MD5;
+        public MD5Hash CEKey;
         public uint FileDataIdOffset;
-        public ulong Hash;
+        public ulong NameHash;
 
         public uint FileDataId;
         public string Path;

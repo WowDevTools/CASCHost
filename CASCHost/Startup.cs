@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.FileProviders;
 
 namespace CASCHost
 {
@@ -31,8 +32,9 @@ namespace CASCHost
 			IConfigurationRoot configuration = builder.Build();
 
 			services.AddOptions();
-			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-			services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
+            services.AddHttpContextAccessor();
+            services.AddSingleton<FileProvider>();
+            services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
 		}
 
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider, IOptions<AppSettings> settings)
@@ -40,10 +42,10 @@ namespace CASCHost
 			if (env.IsDevelopment())
 				app.UseDeveloperExceptionPage();
 
-			//Set file handler
-			app.UseStaticFiles(new StaticFileOptions()
-			{
-				FileProvider = new FileProvider(env, serviceProvider),
+            //Set file handler
+            app.UseStaticFiles(new StaticFileOptions()
+            {
+                FileProvider = serviceProvider.GetService<FileProvider>(),
 				DefaultContentType = "application/octet-stream",
 				ServeUnknownFileTypes = true
 			});

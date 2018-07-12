@@ -16,13 +16,12 @@ namespace CASCHost
 	public class FileProvider : IFileProvider
 	{
 		private readonly string outPath;
-		private readonly IServiceProvider serviceProvider;
 		private IHttpContextAccessor contextAccessor;
 
-		public FileProvider(IHostingEnvironment env, IServiceProvider provider)
+		public FileProvider(IHostingEnvironment env, IHttpContextAccessor contextAccessor)
 		{
-			serviceProvider = provider;
-			outPath = Path.Combine(env.WebRootPath, "Output");
+            this.contextAccessor = contextAccessor;
+            this.outPath = Path.Combine(env.WebRootPath, "Output");
 		}
 
 
@@ -44,8 +43,7 @@ namespace CASCHost
 
 		private bool ProcessCommands(string path)
 		{
-			IHttpContextAccessor contextAccessor = serviceProvider.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;
-			ConnectionInfo conn = contextAccessor?.HttpContext.Connection;
+            ConnectionInfo conn = contextAccessor.HttpContext.Connection;
 			string[] parts = path.TrimStart('/').Split('/');
 
 			if (conn != null && parts.Length > 0)
@@ -70,9 +68,6 @@ namespace CASCHost
 
 		private bool GetByteRange(out RangeItemHeaderValue range)
 		{
-			if (contextAccessor == null)
-				contextAccessor = serviceProvider.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;
-
 			range = contextAccessor?.HttpContext?.Request?.GetTypedHeaders()?.Range?.Ranges.FirstOrDefault();
 			return range != null;
 		}

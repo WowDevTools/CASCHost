@@ -138,6 +138,7 @@ namespace CASCEdit.Handlers
 
 				GlobalRoot.Entries.Add(entry); // Insert into the Global Root
 				maxId = Math.Max(entry.FileDataId, maxId); // Update the max id
+				cache?.AddOrUpdate(new CacheEntry(entry, file.EKey)); // Save to cache
 			} else { // Existing file, we just have to update the data hash
 				foreach (var entry in entries) {
 					entry.CEKey = file.CEKey;

@@ -78,7 +78,6 @@ namespace CASCEdit
 				// download urls
 				var cdns = CDNs["Hosts"].Split(' ').Select(x => $"http://{x}/{CDNs["Path"]}").ToList();				
 				Settings.DownloadLocations = new HashSet<string>(cdns);
-				settings.DownloadLocations.Add($"https://bnet.marlam.in/{CDNs["Path"]}"); //Thanks to Marlamin for this access
 
 				// cdns urls
 				foreach (var c in CDNs["Hosts"].Split(' '))

@@ -72,12 +72,11 @@ namespace CASCEdit.Handlers
 
                 Footer = new IndexFooter()
                 {
-                    IndexBlockHash = br.ReadBytes(8),
                     TOCHash = br.ReadBytes(8),
                     Version = br.ReadByte(),
                     _11 = br.ReadByte(),
                     _12 = br.ReadByte(),
-                    _13 = br.ReadByte(),
+                    BlockSizeKb = br.ReadByte(),
                     Offset = br.ReadByte(),
                     Size = br.ReadByte(),
                     KeySize = br.ReadByte(),
@@ -155,7 +154,7 @@ namespace CASCEdit.Handlers
                 bw.Write(Footer.Version);
                 bw.Write(Footer._11);
                 bw.Write(Footer._12);
-                bw.Write(Footer._13);
+                bw.Write(Footer.BlockSizeKb);
                 bw.Write(Footer.Offset);
                 bw.Write(Footer.Size);
                 bw.Write(Footer.KeySize);

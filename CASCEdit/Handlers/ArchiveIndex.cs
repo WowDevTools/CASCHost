@@ -16,7 +16,7 @@ namespace CASCEdit.Handlers
 		public IndexFooter Footer = new IndexFooter();
 
 		public readonly string BaseFile;
-		const int CHUNK_SIZE = 0x1000;
+		const int CHUNK_SIZE = 4096;
 
 		public ArchiveIndexHandler(string path = "")
 		{
@@ -65,18 +65,17 @@ namespace CASCEdit.Handlers
 				//Footer
 				Footer = new IndexFooter()
 				{
-					IndexBlockHash = br.ReadBytes(8),
-					TOCHash = br.ReadBytes(8),
-					Version = br.ReadByte(),
+                    TOCHash = br.ReadBytes(8),
+                    Version = br.ReadByte(),
 					_11 = br.ReadByte(),
 					_12 = br.ReadByte(),
-					_13 = br.ReadByte(),
+					BlockSizeKb = br.ReadByte(),
 					Offset = br.ReadByte(),
 					Size = br.ReadByte(),
 					KeySize = br.ReadByte(),
 					ChecksumSize = br.ReadByte(),
 					EntryCount = br.ReadUInt32(),
-					FooterMD5 = br.ReadBytes(8)
+					FooterMD5 = br.ReadBytes(Footer.ChecksumSize)
 				};
 			}
 		}
@@ -102,11 +101,11 @@ namespace CASCEdit.Handlers
 
 					if (pos + entry.EntrySize > CHUNK_SIZE)
 					{
-						entryHashes.Add(Entries[i - 1].EKey.Value); //Last entry hash
+					    entryHashes.Add(Entries[i - 1].EKey.Value); //Last entry hash
 
-						bw.Write(new byte[CHUNK_SIZE - pos]);
-						blockHashes.Add(GetBlockHash(bw, md5));
-						pos = 0;
+					    bw.Write(new byte[CHUNK_SIZE - pos]);
+					    blockHashes.Add(GetBlockHash(bw, md5));
+                        pos = 0;
 					}
 
 					entry.Offset = offset;
@@ -130,23 +129,23 @@ namespace CASCEdit.Handlers
 				//Block hashes
 				if (blockHashes.Count > 0)
 				{
-					bw.Write(blockHashes.SelectMany(x => x).ToArray());
-					blockHashes.Clear();
+				    bw.Write(blockHashes.SelectMany(x => x).ToArray());
+				    blockHashes.Clear();
 				}
 
 				//Footer Start
 				long posFooterStart = bw.BaseStream.Position;
 
-				//Calculate IndexBlockHash
-				bw.BaseStream.Position = CHUNK_SIZE * (blockCount - 1);
-				byte[] indexBlockHashBytes = new byte[CHUNK_SIZE];
-				bw.BaseStream.Read(indexBlockHashBytes, 0, indexBlockHashBytes.Length);
-				bw.BaseStream.Position = posFooterStart;
-				var lowerHash = md5.ComputeHash(indexBlockHashBytes).Take(8).ToArray();
-				bw.Write(lowerHash);
+                //Calculate IndexBlockHash
+                bw.BaseStream.Position = CHUNK_SIZE * (blockCount - 1);
+                byte[] indexBlockHashBytes = new byte[CHUNK_SIZE];
+                bw.BaseStream.Read(indexBlockHashBytes, 0, indexBlockHashBytes.Length);
+                bw.BaseStream.Position = posFooterStart;
+                var lowerHash = md5.ComputeHash(indexBlockHashBytes).Take(8).ToArray();
+                bw.Write(lowerHash);
 
-				//Calculate TOCHash
-				bw.BaseStream.Position = CHUNK_SIZE * blockCount;
+                //Calculate TOCHash
+                bw.BaseStream.Position = CHUNK_SIZE * blockCount;
 				byte[] tocHashBytes = new byte[8 + posFooterStart - bw.BaseStream.Position];
 				bw.BaseStream.Read(tocHashBytes, 0, tocHashBytes.Length);
 				var upperHash = md5.ComputeHash(tocHashBytes).Take(8).ToArray();
@@ -156,7 +155,7 @@ namespace CASCEdit.Handlers
 				bw.Write(Footer.Version);
 				bw.Write(Footer._11);
 				bw.Write(Footer._12);
-				bw.Write(Footer._13);
+				bw.Write(Footer.BlockSizeKb);
 				bw.Write(Footer.Offset);
 				bw.Write(Footer.Size);
 				bw.Write(Footer.KeySize);
@@ -186,7 +185,8 @@ namespace CASCEdit.Handlers
 				CASContainer.CDNConfig["archives"].RemoveAll(x => x == Path.GetFileNameWithoutExtension(BaseFile));
 				CASContainer.CDNConfig["archives"].Add(filename);
 				CASContainer.CDNConfig["archives"].Sort(new HashComparer());
-
+                CASContainer.Logger.LogInformation($"Index Hash Position: {CASContainer.CDNConfig["archives"].IndexOf(filename).ToString()} Index Size: {ms.Length}");
+                CASContainer.CDNConfig["archives-index-size"].Insert(CASContainer.CDNConfig["archives"].IndexOf(filename) - 1, ms.Length.ToString());
 				return path;
 			}
 		}

@@ -26,12 +26,11 @@ namespace CASCEdit.Structs
 
     public class IndexFooter
     {
-        public byte[] IndexBlockHash; // ChecksumSize
         public byte[] TOCHash; // ChecksumSize
         public byte Version = 1;
         public byte _11 = 0;
         public byte _12 = 0;
-        public byte _13 = 4;
+        public byte BlockSizeKb = 4;
         public byte Offset = 4;
         public byte Size = 4;
         public byte KeySize = 16;

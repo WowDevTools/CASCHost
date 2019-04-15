@@ -16,7 +16,7 @@ namespace CASCEdit.Handlers
 		public IndexFooter Footer = new IndexFooter();
 
 		public readonly string BaseFile;
-		const int CHUNK_SIZE = 4096;
+		const int CHUNK_SIZE = 0x1000;
 
 		public ArchiveIndexHandler(string path = "")
 		{
@@ -60,7 +60,7 @@ namespace CASCEdit.Handlers
 				br.BaseStream.Position += blockcount * 16;
 
 				//Block hashes - lower_md5 all blocks except last
-				br.BaseStream.Position += (blockcount - 1) * 8;
+				br.BaseStream.Position += blockcount * 8;
 
 				//Footer
 				Footer = new IndexFooter()

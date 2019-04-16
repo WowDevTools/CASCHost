@@ -120,7 +120,8 @@ namespace CASCEdit.Handlers
 						.SelectMany(chunk => chunk.Entries) // Flatten the array to get all entries within all matching chunks
 						.Where(e => e.NameHash == namehash);
 						
-			if (entries.Count() == 0) { // New file, we need to create an entry for it
+			if (entries.Count() == 0)
+            { // New file, we need to create an entry for it
 				var cached = cache.Entries.FirstOrDefault(x => x.Path == path);
 				var fileDataId = Math.Max(maxId + 1, minimumId);
 
@@ -138,8 +139,11 @@ namespace CASCEdit.Handlers
 
 				GlobalRoot.Entries.Add(entry); // Insert into the Global Root
 				maxId = Math.Max(entry.FileDataId, maxId); // Update the max id
-			} else { // Existing file, we just have to update the data hash
-				foreach (var entry in entries) {
+			}
+            else
+            { // Existing file, we just have to update the data hash
+				foreach (var entry in entries)
+                {
 					entry.CEKey = file.CEKey;
 					entry.Path = path;
 

@@ -23,8 +23,14 @@ namespace CASCEdit.Handlers
 		private uint maxId = 0;
 		private readonly uint minimumId;
 		private readonly EncodingMap encodingMap;
+        private int namedFiles = 0;
+        private int allFiles = 0;
+        private int parsedFiles = 0;
+        private const int headerMagic = 0x4D465354; // MFST 
+        private const string customFileDataDirectory = "filedatas"; // we generate a custom namehash for files without one ( 8.2 root change ), therefore we need allow some options.
+        private const string customFileDataPrefix = "filedata_";
 
-		public RootHandler()
+        public RootHandler()
 		{
 			GlobalRoot = new RootChunk() { ContentFlags = ContentFlags.None, LocaleFlags = LocaleFlags.All_WoW };
 			encodingMap = new EncodingMap(EncodingType.ZLib, 9);
@@ -37,7 +43,20 @@ namespace CASCEdit.Handlers
 
 			BinaryReader stream = new BinaryReader(data);
 
-			long length = stream.BaseStream.Length;
+            // 8.2 root change
+            int magic = stream.ReadInt32();
+            bool newFormat = magic == headerMagic;
+            if (newFormat)
+            {
+                allFiles = stream.ReadInt32();
+                namedFiles = stream.ReadInt32();
+            }
+            else
+            {
+                stream.BaseStream.Position = 0;
+            }
+
+            long length = stream.BaseStream.Length;
 			while (stream.BaseStream.Position < length)
 			{
 				RootChunk chunk = new RootChunk()
@@ -47,8 +66,10 @@ namespace CASCEdit.Handlers
 					LocaleFlags = (LocaleFlags)stream.ReadUInt32(),
 				};
 
-				// set the global root
-				if (chunk.LocaleFlags == LocaleFlags.All_WoW && chunk.ContentFlags == ContentFlags.None)
+                parsedFiles += (int)chunk.Count;
+
+                // set the global root
+                if (chunk.LocaleFlags == LocaleFlags.All_WoW && chunk.ContentFlags == ContentFlags.None)
 					GlobalRoot = chunk;
 
 				uint fileDataIndex = 0;
@@ -66,14 +87,41 @@ namespace CASCEdit.Handlers
 					chunk.Entries.Add(entry);
 				}
 
-				foreach (var entry in chunk.Entries)
-				{
-					entry.CEKey = new MD5Hash(stream);
-					entry.NameHash = stream.ReadUInt64();
-					maxId = Math.Max(maxId, entry.FileDataId);
-				}
+                if (newFormat)
+                {
+                    foreach (var entry in chunk.Entries)
+                    {
+                        entry.CEKey = new MD5Hash(stream);
+                        maxId = Math.Max(maxId, entry.FileDataId);
+                    }
 
-				Chunks.Add(chunk);
+                    if (parsedFiles > allFiles - namedFiles)
+                    {
+                        foreach (var entry in chunk.Entries)
+                        {
+                            entry.NameHash = stream.ReadUInt64();
+                        }
+                    }
+                    else // no namehash, so we generate a custom one
+                    {
+                        foreach (var entry in chunk.Entries)
+                        {
+                            entry.NameHash = new Jenkins96().ComputeHash($"{customFileDataDirectory}/{customFileDataPrefix}" + entry.FileDataId);
+                        }
+                    }
+
+                }
+                else
+                {
+                    foreach (var entry in chunk.Entries)
+                    {
+                        entry.CEKey = new MD5Hash(stream);
+                        entry.NameHash = stream.ReadUInt64();
+                        maxId = Math.Max(maxId, entry.FileDataId);
+                    }
+                }
+
+                Chunks.Add(chunk);
 			}
 
 			if (GlobalRoot == null)
@@ -139,7 +187,9 @@ namespace CASCEdit.Handlers
 
 				GlobalRoot.Entries.Add(entry); // Insert into the Global Root
 				maxId = Math.Max(entry.FileDataId, maxId); // Update the max id
-			}
+
+                cache?.AddOrUpdate(new CacheEntry(entry, file.EKey)); // If not done, sometimes files will not be added.
+            }
             else
             { // Existing file, we just have to update the data hash
 				foreach (var entry in entries)

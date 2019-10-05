@@ -13,7 +13,8 @@ namespace CASCHost
 	public class AppSettings
 	{
 		public uint MinimumFileDataId { get; set; } // the minimum file id for new files
-		public bool BNetAppSupport { get; set; } = false; // create install and download files?
+        public bool OnlineListFile { get; set; } = false; // fetchs from WoW.Tools the lastest listfile 
+        public bool BNetAppSupport { get; set; } = false; // create install and download files?
 		public bool StaticMode { get; set; } = false; // Build CDN file struct
         public string RebuildPassword { get; set; } = "";
 

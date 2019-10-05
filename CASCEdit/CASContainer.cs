@@ -193,7 +193,7 @@ namespace CASCEdit
             }
         }
 
-        public static void OpenRoot(LocaleFlags locale, uint minimumid = 0)
+        public static void OpenRoot(LocaleFlags locale, uint minimumid = 0, bool onlineListfile = false)
         {
             Logger.LogInformation("Loading Root...");
 
@@ -208,7 +208,7 @@ namespace CASCEdit
             if (idxInfo != null)
             {
                 var path = Path.Combine(BasePath, "Data", "data", string.Format("data.{0:D3}", idxInfo.Archive));
-                RootHandler = new RootHandler(DataHandler.Read(path, idxInfo), locale, minimumid);
+                RootHandler = new RootHandler(DataHandler.Read(path, idxInfo), locale, minimumid, onlineListfile);
             }
             else
             {
@@ -223,7 +223,7 @@ namespace CASCEdit
                         Logger.LogCritical($"Unable to download Root {key}.");
                 }
 
-                RootHandler = new RootHandler(DataHandler.ReadDirect(path), locale, minimumid);
+                RootHandler = new RootHandler(DataHandler.ReadDirect(path), locale, minimumid, onlineListfile);
             }
         }
 

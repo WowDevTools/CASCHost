@@ -145,7 +145,7 @@ namespace CASCHost
 			CASContainer.Open(settings);
 			CASContainer.OpenCdnIndices(false);
 			CASContainer.OpenEncoding();
-			CASContainer.OpenRoot(settings.Locale, Startup.Settings.MinimumFileDataId);
+			CASContainer.OpenRoot(settings.Locale, Startup.Settings.MinimumFileDataId, Startup.Settings.OnlineListFile);
 
 			if(Startup.Settings.BNetAppSupport) // these are only needed by the bnet app launcher
 			{

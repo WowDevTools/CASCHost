@@ -10,6 +10,7 @@ using CASCEdit.Structs;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using CASCEdit.IO;
+using System.Net;
 
 namespace CASCEdit.Handlers
 {
@@ -23,12 +24,16 @@ namespace CASCEdit.Handlers
 		private uint maxId = 0;
 		private readonly uint minimumId;
 		private readonly EncodingMap encodingMap;
+
         private int namedFiles = 0;
         private int allFiles = 0;
         private int parsedFiles = 0;
         private const int headerMagic = 0x4D465354; // MFST 
-        private const string customFileDataDirectory = "filedatas"; // we generate a custom namehash for files without one ( 8.2 root change ), therefore we need allow some options.
-        private const string customFileDataPrefix = "filedata_";
+
+
+        private Dictionary<uint, ulong> ListFile = new Dictionary<uint, ulong>();
+        private WebClient ListFileClient = new WebClient();
+  
 
         public RootHandler()
 		{
@@ -36,12 +41,19 @@ namespace CASCEdit.Handlers
 			encodingMap = new EncodingMap(EncodingType.ZLib, 9);
 		}
 
-		public RootHandler(Stream data, LocaleFlags locale, uint minimumid = 0)
+		public RootHandler(Stream data, LocaleFlags locale, uint minimumid = 0, bool onlineListfile = false)
 		{
 			this.minimumId = minimumid;
 			this.locale = locale;
+            string cdnPath = Helper.GetCDNPath("listfile.csv");
 
-			BinaryReader stream = new BinaryReader(data);
+            if (!(File.Exists(Path.Combine(CASContainer.Settings.OutputPath, cdnPath))) && onlineListfile)
+            {
+                CASContainer.Logger.LogInformation("Downloading listfile from WoW.Tools");
+                ListFileClient.DownloadFile("https://wow.tools/casc/listfile/download/csv/unverified", cdnPath);
+            }
+
+            BinaryReader stream = new BinaryReader(data);
 
             // 8.2 root change
             int magic = stream.ReadInt32();
@@ -102,11 +114,11 @@ namespace CASCEdit.Handlers
                             entry.NameHash = stream.ReadUInt64();
                         }
                     }
-                    else // no namehash, so we generate a custom one
+                    else // no namehash
                     {
                         foreach (var entry in chunk.Entries)
                         {
-                            entry.NameHash = new Jenkins96().ComputeHash($"{customFileDataDirectory}/{customFileDataPrefix}" + entry.FileDataId);
+                            entry.NameHash = 0;
                         }
                     }
 
@@ -130,8 +142,35 @@ namespace CASCEdit.Handlers
 				return;
 			}
 
-			// set maxid from cache
-			maxId = Math.Max(Math.Max(maxId, minimumid), CASContainer.Settings.Cache?.MaxId ?? 0);
+            // use listfile to assign names
+            var listFileLines = File.ReadAllLines(cdnPath);
+            foreach (var listFileData in listFileLines)
+            {
+                var splitData = listFileData.Split(';');
+
+                if (splitData.Length != 2)
+                    continue;
+
+                if (!uint.TryParse(splitData[0], out uint listFileDataID))
+                    continue;
+
+                ListFile[listFileDataID] = new Jenkins96().ComputeHash(splitData[1]);
+            }
+
+            foreach (var chunk in Chunks)
+            {
+                foreach (var entry in chunk.Entries)
+                {
+                    if (entry.NameHash == 0)
+                    {
+                        if (ListFile.ContainsKey(entry.FileDataId))
+                            entry.NameHash = ListFile[entry.FileDataId];
+                    }
+                }
+            }
+
+            // set maxid from cache
+            maxId = Math.Max(Math.Max(maxId, minimumid), CASContainer.Settings.Cache?.MaxId ?? 0);
 
 			// store encoding map
 			encodingMap = (data as BLTEStream)?.EncodingMap.FirstOrDefault() ?? new EncodingMap(EncodingType.ZLib, 9);
